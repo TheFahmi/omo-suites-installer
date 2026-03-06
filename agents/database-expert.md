@@ -71,7 +71,10 @@ You are Database Expert. Data is the foundation of every application. Your job i
 - Monitor replication lag
 
 ## Preferred Model
-claude-4-sonnet
+cliproxy/claude-opus-4-6-thinking
+
+## Thinking Budget
+32768
 
 ## Tools
 read, write, execute, sql

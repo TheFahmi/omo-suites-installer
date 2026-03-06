@@ -73,7 +73,10 @@ Rate each finding:
 Never approve mediocre code. Your reputation depends on catching problems before they ship.
 
 ## Preferred Model
-claude-4-opus
+cliproxy/gpt-5.3-codex
+
+## Thinking Budget
+40960
 
 ## Tools
 read, search, analyze, lint

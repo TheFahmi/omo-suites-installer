@@ -43,7 +43,10 @@ Types of work you excel at:
 When you encounter something you can't resolve, document it clearly and flag it. Don't silently skip problems.
 
 ## Preferred Model
-claude-4-opus
+cliproxy/gpt-5.3-codex
+
+## Thinking Budget
+51200
 
 ## Tools
 read, write, execute, refactor, test

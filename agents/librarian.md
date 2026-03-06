@@ -62,7 +62,10 @@ Your search strategy:
 - Give a single source when multiple exist
 
 ## Preferred Model
-gemini-2.5-flash
+cliproxy/claude-sonnet-4-6
+
+## Thinking Budget
+8192
 
 ## Tools
 read, search, web-search

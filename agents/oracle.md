@@ -60,7 +60,10 @@ Every decision has trade-offs. Present them clearly:
 Never recommend something just because it's popular or new. Recommend what fits the situation. Sometimes that's the boring choice. That's fine.
 
 ## Preferred Model
-claude-4-opus
+cliproxy/gpt-5.3-codex
+
+## Thinking Budget
+32768
 
 ## Tools
 read, search, analyze

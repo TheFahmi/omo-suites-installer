@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { readConfig, setActiveAgent } from '../core/config.ts';
-import { agents, getAgent, listAgentIds, loadAgentPrompt } from '../data/agents.ts';
+import { agents, getAgent, listAgentIds, loadAgentPrompt, categoryRouting, getAgentForCategory, listCategories } from '../data/agents.ts';
 import { customAgentsStore, type CustomAgent } from '../core/store.ts';
 import { createTable, heading, success, fail, warn, info, icons, handleError, infoBox } from '../utils/ui.ts';
 
@@ -28,6 +28,7 @@ export function registerAgentCommand(program: Command): void {
             ag.name,
             ag.description,
             ag.preferredModel,
+            ag.thinkingBudget.toString(),
             active,
           ]);
         }
@@ -41,12 +42,13 @@ export function registerAgentCommand(program: Command): void {
             ag.name + chalk.gray(' (custom)'),
             ag.description,
             ag.preferredModel,
+            '-',
             active,
           ]);
         }
 
         console.log(createTable(
-          ['ID', 'Name', 'Description', 'Model', 'Status'],
+          ['ID', 'Name', 'Description', 'Model', 'Budget', 'Status'],
           rows
         ));
 
@@ -135,7 +137,7 @@ export function registerAgentCommand(program: Command): void {
             type: 'input',
             name: 'preferredModel',
             message: 'Preferred model:',
-            default: 'claude-4-sonnet',
+            default: 'cliproxy/claude-sonnet-4-6',
           },
           {
             type: 'editor',
@@ -219,6 +221,7 @@ export function registerAgentCommand(program: Command): void {
           `${chalk.gray('ID:')} ${ag.id}`,
           `${chalk.gray('Description:')} ${ag.description}`,
           `${chalk.gray('Model:')} ${ag.preferredModel}`,
+          `${chalk.gray('Thinking Budget:')} ${ag.thinkingBudget}`,
           `${chalk.gray('Tools:')} ${ag.tools.join(', ')}`,
           `${chalk.gray('Tags:')} ${ag.tags.join(', ')}`,
           '',
@@ -227,6 +230,55 @@ export function registerAgentCommand(program: Command): void {
         ].join('\n'));
       } catch (error) {
         if ((error as any)?.name === 'ExitPromptError') return;
+        handleError(error);
+      }
+    });
+
+  // ─── agent categories ─────────────────────────────────────────────
+  agent
+    .command('categories')
+    .description('List all task categories and their agent routing')
+    .action(async () => {
+      try {
+        heading('📂 Task Categories');
+
+        const rows: (string | number)[][] = [];
+        for (const [category, agentId] of Object.entries(categoryRouting)) {
+          const ag = agents[agentId];
+          rows.push([
+            category,
+            ag ? `${ag.emoji} ${ag.name}` : agentId,
+            ag ? ag.preferredModel : '-',
+          ]);
+        }
+
+        console.log(createTable(
+          ['Category', 'Agent', 'Model'],
+          rows
+        ));
+
+        console.log(`\n  Total categories: ${chalk.bold(listCategories().length.toString())}`);
+        console.log(`  Route a task: ${chalk.cyan('omocs agent route <category>')}\n`);
+      } catch (error) {
+        handleError(error);
+      }
+    });
+
+  // ─── agent route ──────────────────────────────────────────────────
+  agent
+    .command('route')
+    .description('Show which agent handles a task category')
+    .argument('<category>', 'Task category (e.g. deep, quick, backend, security)')
+    .action(async (category: string) => {
+      try {
+        const ag = getAgentForCategory(category);
+        if (!ag) {
+          fail(`Unknown category '${category}'.`);
+          info(`Available categories: ${listCategories().join(', ')}`);
+          return;
+        }
+        success(`Category '${category}' → ${ag.emoji} ${ag.name} (${ag.preferredModel})`);
+      } catch (error) {
         handleError(error);
       }
     });

@@ -34,11 +34,14 @@ When choosing which agent to delegate to:
 - **Bug fix?** → Explorer (investigate) → Sisyphus (fix) → Momus (review)
 - **Architecture question?** → Oracle (advise) → Metis (gap analysis)
 - **Refactoring?** → Explorer (map) → Hephaestus (refactor) → Momus (review)
-- **Security concern?** → Security Auditor
-- **Performance issue?** → Performance Profiler
+- **Security concern?** → Hephaestus
+- **Performance issue?** → Hephaestus
 - **Database work?** → Database Expert
-- **UI/UX work?** → Frontend Specialist
-- **DevOps/deployment?** → DevOps Engineer
+- **UI/UX work?** → Frontend UI/UX Engineer
+- **DevOps/deployment?** → DevRel
+- **Architecture?** → Architect
+- **Image generation?** → Image Generator
+- **Visual analysis?** → Multimodal Looker
 
 ## Rules
 
@@ -48,3 +51,9 @@ When choosing which agent to delegate to:
 - Set clear acceptance criteria for each subtask
 - Track progress and report status
 - Escalate blockers immediately
+
+## Preferred Model
+cliproxy/claude-opus-4-6-thinking
+
+## Thinking Budget
+20480
