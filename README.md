@@ -1,11 +1,10 @@
 ```
-   ___  _    __ ____     ____        _ __
-  / _ \| |  / // __ \   / __/__  __ (_) /____  ___
- / /_/ /| | / // /_/ /  _\ \/ / / / / / __/ -_|_-<
- \____/ |___/ \____/   /___/\_,_/ /_/\__/\__/___/
+  ╔═╗╔╦╗╔═╗  ╔═╗┬ ┬┬┌┬┐┌─┐┌─┐
+  ║ ║║║║║ ║  ╚═╗│ ││ │ ├┤ └─┐
+  ╚═╝╩ ╩╚═╝  ╚═╝└─┘┴ ┴ └─┘└─┘
 ```
 
-# OVO Suites
+# OMO Suites
 
 Config toolkit for [OpenCode](https://github.com/opencode-ai/opencode). Manage accounts, profiles, agents, LSPs, and MCP tools from one CLI.
 
