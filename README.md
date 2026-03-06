@@ -13,31 +13,6 @@
 
 OpenCode plugin + standalone CLI. Multi-model orchestration, smart agent routing, profile switching, MCP/LSP management — everything you need to get the most out of [OpenCode](https://github.com/opencode-ai/opencode).
 
-## OMO Suites vs OCS (OpenCode Configuration Suites)
-
-| Feature | OMO Suites (Free) | OCS (Paid) |
-|---------|-------------------|------------|
-| **Price** | **$0 — MIT license** | $29/mo |
-| **Profiles** | **13 profiles** | 8 profiles |
-| **Scope types** | **4 (all, lead, mixed, economy)** | 2 |
-| **Agents** | **15 specialized agents** | 6 |
-| **Task categories** | **32 categories** | 12 |
-| **Agent routing** | **✅ Category → Agent** | ❌ |
-| **MCP registry** | **11 servers** | 5 |
-| **LSP registry** | **10 servers** | 4 |
-| **Auto LSP detect** | **✅ Stack scanning** | ❌ |
-| **OpenCode plugin** | **✅ Native plugin** | ✅ |
-| **CLI standalone** | **✅ Full CLI** | ❌ Plugin only |
-| **System prompt injection** | **✅ Agent awareness** | ✅ |
-| **Custom profiles** | **✅ Create + export/import** | ✅ |
-| **Account management** | **✅ Encrypted key rotation** | ❌ |
-| **Health check (doctor)** | **✅ 10-point diagnostic** | ❌ |
-| **Kimi K2.5 support** | **✅** | ❌ |
-| **Ollama/local models** | **✅** | ❌ |
-| **Budget profiles** | **✅** | ❌ |
-
-**OMO Suites beats OCS on every metric — for free.**
-
 ---
 
 ## Install
