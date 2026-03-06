@@ -1,5 +1,5 @@
 import { existsSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { homedir } from 'os';
 import { commandExists, getCommandVersion } from '../utils/shell.ts';
 
@@ -151,4 +151,29 @@ export async function removeMcpFromConfig(name: string): Promise<boolean> {
   delete existing.config.mcpServers[name];
   await writeOpenCodeConfig(existing.config, existing.path);
   return true;
+}
+
+// ─── Find OpenCode Config Path ──────────────────────────────────────
+export function findOpencodeConfig(): string {
+  // Check project-local first, then global
+  const localPaths = [
+    resolve(process.cwd(), 'opencode.json'),
+    resolve(process.cwd(), '.opencode.json'),
+  ];
+  for (const p of localPaths) {
+    if (existsSync(p)) return p;
+  }
+  // Global config
+  const globalPath = resolve(homedir(), '.config', 'opencode', 'opencode.json');
+  return globalPath; // Return global path even if doesn't exist (will create)
+}
+
+// ─── Check oh-my-opencode Installation ──────────────────────────────
+export async function checkOhMyOpenCode(): Promise<boolean> {
+  // Check in common locations
+  const paths = [
+    resolve(homedir(), '.cache', 'opencode', 'node_modules', 'oh-my-opencode'),
+    resolve(homedir(), '.config', 'opencode', 'node_modules', 'oh-my-opencode'),
+  ];
+  return paths.some(p => existsSync(p));
 }
