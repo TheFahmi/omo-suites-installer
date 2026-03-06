@@ -10,13 +10,19 @@ import { registerLspCommand } from './commands/lsp.ts';
 import { registerMcpCommand } from './commands/mcp.ts';
 import { registerStatsCommand } from './commands/stats.ts';
 
-const VERSION = '1.0.0';
+import { readFileSync } from 'fs';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
+const __pkgDir = dirname(dirname(fileURLToPath(import.meta.url)));
+const pkg = JSON.parse(readFileSync(resolve(__pkgDir, 'package.json'), 'utf-8'));
+const VERSION = pkg.version;
 
 export const program = new Command();
 
 program
   .name('omocs')
-  .description('OMOC Suites — CLI toolkit for OpenCode power users')
+  .description('OMO Suites — CLI toolkit for OpenCode power users')
   .version(VERSION, '-v, --version', 'Show version')
   .hook('preAction', () => {
     // Global error handling

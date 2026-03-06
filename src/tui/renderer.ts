@@ -1,9 +1,18 @@
+import { readFileSync } from 'fs';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
 import {
   gold, goldBold, dim, bold, white, green, red, cyan, gray, bgGold,
   BOX, getTerminalSize, padEnd, stripAnsi, centerText, truncate,
 } from './utils.ts';
 
-const VERSION = '1.1.0';
+const __pkgDir = dirname(dirname(fileURLToPath(import.meta.url)));
+let VERSION = '1.2.0';
+try {
+  const pkg = JSON.parse(readFileSync(resolve(__pkgDir, 'package.json'), 'utf-8'));
+  VERSION = pkg.version;
+} catch {}
+export { VERSION };
 
 export const MENU_ITEMS = ['Profile', 'Agents', 'MCP', 'LSP', 'Doctor', 'Stats'] as const;
 export type MenuItem = typeof MENU_ITEMS[number];

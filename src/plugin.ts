@@ -1,8 +1,18 @@
 import type { Plugin } from "@opencode-ai/plugin";
 import { tool } from "@opencode-ai/plugin/tool";
 import { existsSync, readFileSync, writeFileSync, readdirSync } from "fs";
-import { join } from "path";
+import { join, dirname, resolve } from "path";
 import { homedir } from "os";
+import { fileURLToPath } from "url";
+
+const __pkgDir = dirname(fileURLToPath(import.meta.url));
+let PLUGIN_VERSION = '1.2.0';
+try {
+  // Try sibling package.json first (built dist/), then parent (src/)
+  for (const p of [resolve(__pkgDir, 'package.json'), resolve(__pkgDir, '..', 'package.json')]) {
+    if (existsSync(p)) { PLUGIN_VERSION = JSON.parse(readFileSync(p, 'utf-8')).version; break; }
+  }
+} catch {}
 
 // Import existing data
 import { agents, categoryRouting, getAgentForCategory, listCategories, listAgentIds } from "./data/agents";
@@ -118,6 +128,7 @@ function formatCategoryList(): string {
 // ─── Plugin Definition ───────────────────────────────────────────────
 
 const OmoSuitesPlugin: Plugin = async (ctx) => {
+  console.log(`[OMO Suites] v${PLUGIN_VERSION} loaded`);
   return {
     tool: {
       // ═══════════════════════════════════════════════════════════════
