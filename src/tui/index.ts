@@ -24,6 +24,7 @@ import {
 } from './views/stats.ts';
 import { addMcpToConfig, removeMcpFromConfig } from '../core/opencode.ts';
 import { mcpServers, listMcpKeys } from '../data/mcp-registry.ts';
+import { executeCommand, getAutocompleteSuggestions } from './commands.ts';
 
 // ─── State ───────────────────────────────────────────────────────────
 interface TUIState {
@@ -34,6 +35,13 @@ interface TUIState {
   helpVisible: boolean;
   statusMessage: string;
   statusTimeout: ReturnType<typeof setTimeout> | null;
+
+  // Command bar state
+  commandMode: boolean;
+  commandInput: string;
+  commandResult: string[];
+  showResult: boolean;
+  resultScrollOffset: number;
 
   // View states
   profile: ProfileViewState;
@@ -53,6 +61,13 @@ let state: TUIState = {
   statusMessage: '',
   statusTimeout: null,
 
+  // Command bar
+  commandMode: false,
+  commandInput: '',
+  commandResult: [],
+  showResult: false,
+  resultScrollOffset: 0,
+
   profile: initialProfileState(),
   agents: initialAgentsState(),
   mcp: initialMcpState(),
@@ -65,15 +80,32 @@ let state: TUIState = {
 async function render(): Promise<void> {
   const view = await getCurrentView();
 
+  // Get autocomplete suggestions when in command mode
+  const suggestions = state.commandMode
+    ? getAutocompleteSuggestions(state.commandInput)
+    : [];
+
+  // If showing result overlay, override content title
+  const contentTitle = state.showResult && state.commandResult.length > 0
+    ? `Output: /${state.commandInput || 'command'}`
+    : view.title;
+
   const ctx: RenderContext = {
     activePane: state.activePane,
     menuIndex: state.menuIndex,
     contentLines: view.lines,
-    contentTitle: view.title,
+    contentTitle: contentTitle,
     footerHint: state.statusMessage || view.hint,
     searchMode: state.searchMode,
     searchQuery: state.searchQuery,
     helpVisible: state.helpVisible,
+    // Command bar
+    commandMode: state.commandMode,
+    commandInput: state.commandInput,
+    commandResult: state.commandResult,
+    showResult: state.showResult,
+    resultScrollOffset: state.resultScrollOffset,
+    autocompleteSuggestions: suggestions,
   };
 
   renderScreen(ctx);
@@ -263,6 +295,21 @@ async function toggleMcp(): Promise<void> {
 }
 
 function handleEscape(): void {
+  // Command mode: cancel
+  if (state.commandMode) {
+    state.commandMode = false;
+    state.commandInput = '';
+    return;
+  }
+
+  // Result overlay: dismiss
+  if (state.showResult) {
+    state.showResult = false;
+    state.commandResult = [];
+    state.resultScrollOffset = 0;
+    return;
+  }
+
   if (state.searchMode) {
     state.searchMode = false;
     state.searchQuery = '';
@@ -328,9 +375,113 @@ function handleSearchInput(char: string): void {
   if (state.menuIndex === 3) { state.lsp.searchQuery = state.searchQuery; filterLsp(state.lsp); }
 }
 
+// ─── Command Mode Handlers ───────────────────────────────────────────
+function enterCommandMode(): void {
+  state.commandMode = true;
+  state.commandInput = '';
+  state.showResult = false;
+  state.resultScrollOffset = 0;
+}
+
+async function handleCommandInput(str: string): Promise<void> {
+  if (str === '\x1b') {
+    // Escape
+    handleEscape();
+    return;
+  }
+  if (str === '\r') {
+    // Enter — execute command
+    if (state.commandInput.trim()) {
+      const lastInput = state.commandInput;
+      const result = await executeCommand(state.commandInput);
+      state.commandMode = false;
+      if (result.length === 0) {
+        // /clear command — dismiss overlay
+        state.showResult = false;
+        state.commandResult = [];
+        state.resultScrollOffset = 0;
+      } else {
+        state.commandResult = result;
+        state.showResult = true;
+        state.resultScrollOffset = 0;
+        state.commandInput = lastInput; // preserve for title display
+      }
+    } else {
+      state.commandMode = false;
+    }
+    return;
+  }
+  if (str === '\x7f' || str === '\b') {
+    // Backspace
+    state.commandInput = state.commandInput.slice(0, -1);
+    return;
+  }
+  if (str === '\t') {
+    // Tab — autocomplete
+    const suggestions = getAutocompleteSuggestions(state.commandInput);
+    if (suggestions.length > 0) {
+      // Apply first suggestion, remove leading /
+      state.commandInput = suggestions[0].replace(/^\//, '');
+    }
+    return;
+  }
+  // Ignore arrow keys and other escape sequences in command mode
+  if (str.startsWith('\x1b[')) {
+    return;
+  }
+  // Regular character
+  if (str.length === 1 && str >= ' ') {
+    state.commandInput += str;
+  }
+}
+
 // ─── Input Handler ───────────────────────────────────────────────────
 async function handleInput(data: Buffer): Promise<void> {
   const str = data.toString();
+
+  // Command mode — intercept all input
+  if (state.commandMode) {
+    await handleCommandInput(str);
+    await render();
+    return;
+  }
+
+  // Result overlay — handle scroll and dismiss
+  if (state.showResult) {
+    switch (str) {
+      case '\x1b': // Escape — dismiss
+        handleEscape();
+        await render();
+        return;
+      case '\x1b[A': // Up — scroll up
+      case 'k':
+        state.resultScrollOffset = Math.max(0, state.resultScrollOffset - 1);
+        await render();
+        return;
+      case '\x1b[B': // Down — scroll down
+      case 'j':
+        state.resultScrollOffset = Math.min(
+          Math.max(0, state.commandResult.length - 5),
+          state.resultScrollOffset + 1
+        );
+        await render();
+        return;
+      case 'q':
+      case '\x03':
+        cleanup();
+        process.exit(0);
+        break;
+      case '/': // Enter command mode from result overlay
+        state.showResult = false;
+        state.commandResult = [];
+        state.resultScrollOffset = 0;
+        enterCommandMode();
+        await render();
+        return;
+    }
+    await render();
+    return;
+  }
 
   // Search mode — intercept all input
   if (state.searchMode) {
@@ -375,7 +526,8 @@ async function handleInput(data: Buffer): Promise<void> {
       break;
 
     case '/':
-      startSearch();
+      // Enter command mode (not search mode)
+      enterCommandMode();
       break;
 
     case 'h':

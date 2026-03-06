@@ -17,6 +17,13 @@ export interface RenderContext {
   searchMode: boolean;
   searchQuery: string;
   helpVisible: boolean;
+  // Command bar state
+  commandMode: boolean;
+  commandInput: string;
+  commandResult: string[];
+  showResult: boolean;
+  resultScrollOffset: number;
+  autocompleteSuggestions: string[];
 }
 
 // ─── Main Render Function ────────────────────────────────────────────
@@ -39,7 +46,9 @@ function renderFull(ctx: RenderContext, cols: number, rows: number, output: stri
   const menuWidth = 14;
   const contentWidth = cols - menuWidth - 3; // 3 for borders
   const totalWidth = cols;
-  const contentHeight = rows - 5; // header (2) + footer (2) + bottom border
+  // Reserve: header (2) + command bar (2: divider + input) + bottom border (1)
+  const commandBarHeight = 2;
+  const contentHeight = rows - 5 - commandBarHeight; // header (2) + footer (2) + bottom border + command bar
 
   // ── Header ──
   output.push(gold(BOX.topLeft + BOX.horizontal.repeat(totalWidth - 2) + BOX.topRight));
@@ -63,6 +72,19 @@ function renderFull(ctx: RenderContext, cols: number, rows: number, output: stri
     gold(BOX.teeLeft)
   );
 
+  // ── Determine content to show ──
+  let displayLines: string[];
+  let displayTitle: string;
+
+  if (ctx.showResult && ctx.commandResult.length > 0) {
+    // Show command result overlay
+    displayTitle = ctx.contentTitle;
+    displayLines = ctx.commandResult.slice(ctx.resultScrollOffset);
+  } else {
+    displayTitle = ctx.contentTitle;
+    displayLines = ctx.contentLines;
+  }
+
   // ── Body: Menu + Content ──
   for (let i = 0; i < contentHeight; i++) {
     // Menu cell
@@ -85,16 +107,16 @@ function renderFull(ctx: RenderContext, cols: number, rows: number, output: stri
 
     // Content cell
     let contentCell: string;
-    if (i === 0 && ctx.contentTitle) {
-      contentCell = ' ' + goldBold(truncate(ctx.contentTitle, contentWidth - 2));
+    if (i === 0 && displayTitle) {
+      contentCell = ' ' + goldBold(truncate(displayTitle, contentWidth - 2));
       contentCell = padEnd(contentCell, contentWidth);
-    } else if (i === 1 && ctx.contentTitle) {
-      contentCell = ' ' + gold(BOX.horizontal.repeat(Math.min(stripAnsi(ctx.contentTitle).length, contentWidth - 2)));
+    } else if (i === 1 && displayTitle) {
+      contentCell = ' ' + gold(BOX.horizontal.repeat(Math.min(stripAnsi(displayTitle).length, contentWidth - 2)));
       contentCell = padEnd(contentCell, contentWidth);
     } else {
-      const lineIdx = i - (ctx.contentTitle ? 2 : 0);
-      if (lineIdx >= 0 && lineIdx < ctx.contentLines.length) {
-        contentCell = ' ' + truncate(ctx.contentLines[lineIdx], contentWidth - 2);
+      const lineIdx = i - (displayTitle ? 2 : 0);
+      if (lineIdx >= 0 && lineIdx < displayLines.length) {
+        contentCell = ' ' + truncate(displayLines[lineIdx], contentWidth - 2);
         contentCell = padEnd(contentCell, contentWidth);
       } else {
         contentCell = ' '.repeat(contentWidth);
@@ -110,7 +132,7 @@ function renderFull(ctx: RenderContext, cols: number, rows: number, output: stri
     );
   }
 
-  // ── Footer divider ──
+  // ── Command bar divider (full width, no T-junction) ──
   output.push(
     gold(BOX.teeRight) +
     gold(BOX.horizontal.repeat(menuWidth)) +
@@ -119,14 +141,36 @@ function renderFull(ctx: RenderContext, cols: number, rows: number, output: stri
     gold(BOX.teeLeft)
   );
 
+  // ── Command input bar ──
+  let commandBarText: string;
+  if (ctx.commandMode) {
+    commandBarText = ` ${gold('>')} ${white('/' + ctx.commandInput)}${dim('█')}`;
+    // Show autocomplete hint if available
+    if (ctx.autocompleteSuggestions.length > 0 && ctx.commandInput.length > 0) {
+      const hint = ctx.autocompleteSuggestions[0];
+      const currentInput = '/' + ctx.commandInput;
+      if (hint.startsWith(currentInput) && hint !== currentInput) {
+        commandBarText += dim(hint.slice(currentInput.length));
+      }
+    }
+  } else if (ctx.showResult && ctx.commandResult.length > 0) {
+    commandBarText = ` ${dim('[Esc] dismiss  [↑↓] scroll')}`;
+  } else {
+    commandBarText = ` ${dim('Press / for commands')}`;
+  }
+  commandBarText = padEnd(commandBarText, totalWidth - 2);
+  output.push(gold(BOX.vertical) + commandBarText + gold(BOX.vertical));
+
   // ── Footer ──
   let footerText: string;
-  if (ctx.searchMode) {
+  if (ctx.commandMode) {
+    footerText = ` ${dim('[Enter] execute  [Esc] cancel  [Tab] autocomplete')}`;
+  } else if (ctx.searchMode) {
     footerText = ` ${gold('/')}${white(ctx.searchQuery)}${dim('█')}  ${dim('[Esc] cancel  [Enter] search')}`;
   } else if (ctx.helpVisible) {
     footerText = ` ${dim('↑↓/jk')} navigate  ${dim('Enter')} select  ${dim('Tab')} switch pane  ${dim('/')} search  ${dim('q')} quit`;
   } else {
-    footerText = ` ${ctx.footerHint || dim('[h] help  •  [Tab] switch pane')}`;
+    footerText = ` ${ctx.footerHint || dim('[h] help  •  [Tab] switch pane  •  [/] commands')}`;
   }
   footerText = padEnd(footerText, totalWidth - 2);
   output.push(gold(BOX.vertical) + footerText + gold(BOX.vertical));
