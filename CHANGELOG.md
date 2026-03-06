@@ -5,6 +5,13 @@ All notable changes to OMO Suites will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-03-07
+
+### Added
+- Flowtask integration — 4 new plugin tools (omocs_task_list, omocs_task_create, omocs_task_update, omocs_task_move)
+- Flowtask data helpers (`src/data/flowtask.ts`)
+- System prompt injection updated to advertise Flowtask tools
+
 ## [1.2.0] - 2026-03-06
 
 ### Added

@@ -1,6 +1,6 @@
 {
   "name": "omocs",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "OMO Suites — OpenCode plugin + CLI toolkit. Multi-model orchestration, profiles, agent routing, MCP/LSP management.",
   "type": "module",
   "main": "dist/plugin.js",
