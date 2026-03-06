@@ -15,9 +15,30 @@ OpenCode plugin + standalone CLI. Multi-model orchestration, smart agent routing
 
 ---
 
-## Install
+## Installation
 
-### As OpenCode Plugin
+### For Humans
+
+Copy and paste this prompt to your LLM agent (Claude Code, OpenCode, Cursor, AmpCode, etc.):
+
+```
+Install and configure OMO Suites by following the instructions here:
+https://raw.githubusercontent.com/TheFahmi/omo-suites-installer/main/docs/installation.md
+```
+
+Or read the [Installation Guide](docs/installation.md), but seriously, let an agent do it. Humans fat-finger configs.
+
+### For LLM Agents
+
+Fetch the installation guide and follow it:
+
+```bash
+curl -s https://raw.githubusercontent.com/TheFahmi/omo-suites-installer/main/docs/installation.md
+```
+
+### Manual Install
+
+#### As OpenCode Plugin
 
 ```bash
 # Add to your opencode.json
