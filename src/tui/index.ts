@@ -22,6 +22,9 @@ import {
 import {
   initialStatsState, loadStats, renderStats, type StatsViewState,
 } from './views/stats.ts';
+import {
+  initialLaunchboardState, loadLaunchboardStatus, renderLaunchboardView, type LaunchboardViewState,
+} from './views/launchboard.ts';
 import { addMcpToConfig, removeMcpFromConfig } from '../core/opencode.ts';
 import { mcpServers, listMcpKeys } from '../data/mcp-registry.ts';
 import { executeCommand, getAutocompleteSuggestions } from './commands.ts';
@@ -50,6 +53,7 @@ interface TUIState {
   lsp: LspViewState;
   doctor: DoctorViewState;
   stats: StatsViewState;
+  launchboard: LaunchboardViewState;
 }
 
 let state: TUIState = {
@@ -74,6 +78,7 @@ let state: TUIState = {
   lsp: initialLspState(),
   doctor: initialDoctorState(),
   stats: initialStatsState(),
+  launchboard: initialLaunchboardState(),
 };
 
 // ─── Rendering ───────────────────────────────────────────────────────
@@ -149,6 +154,12 @@ async function getCurrentView(): Promise<{ lines: string[]; title: string; hint:
         await loadStats(state.stats);
       }
       return renderStats(state.stats);
+
+    case 6: // Launchboard
+      if (!state.launchboard.loaded) {
+        await loadLaunchboardStatus(state.launchboard);
+      }
+      return renderLaunchboardView(state.launchboard);
 
     default:
       return { lines: ['Unknown view'], title: '', hint: '' };
@@ -548,6 +559,9 @@ async function handleInput(data: Buffer): Promise<void> {
       } else if (state.menuIndex === 2) {
         state.mcp.loaded = false;
         await loadMcpStatus(state.mcp);
+      } else if (state.menuIndex === 6) {
+        state.launchboard.loaded = false;
+        await loadLaunchboardStatus(state.launchboard);
       }
       break;
   }

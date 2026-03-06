@@ -1,6 +1,6 @@
 {
   "name": "omocs",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "OMO Suites — OpenCode plugin + CLI toolkit. Multi-model orchestration, profiles, agent routing, MCP/LSP management.",
   "type": "module",
   "main": "dist/plugin.js",
@@ -12,11 +12,15 @@
   "bin": {
     "omocs": "./bin/omocs.ts"
   },
+  "workspaces": ["packages/*"],
   "scripts": {
     "start": "bun run bin/omocs.ts",
     "dev": "bun run --watch bin/omocs.ts",
     "build": "bun build src/plugin.ts --outdir dist --target bun --format esm",
-    "build:cli": "bun build bin/omocs.ts --outdir dist/cli --target bun"
+    "build:cli": "bun build bin/omocs.ts --outdir dist/cli --target bun",
+    "launchboard": "cd packages/launchboard && bun run start",
+    "launchboard:dev": "cd packages/launchboard && bun run dev",
+    "launchboard:setup": "cd packages/launchboard && bash setup.sh"
   },
   "dependencies": {
     "@opencode-ai/plugin": "^1.2.20",

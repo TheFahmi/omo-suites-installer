@@ -9,6 +9,7 @@ import { registerAgentCommand } from './commands/agent.ts';
 import { registerLspCommand } from './commands/lsp.ts';
 import { registerMcpCommand } from './commands/mcp.ts';
 import { registerStatsCommand } from './commands/stats.ts';
+import { registerLaunchboardCommand } from './commands/launchboard.ts';
 
 import { readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
@@ -43,6 +44,7 @@ registerAgentCommand(program);
 registerLspCommand(program);
 registerMcpCommand(program);
 registerStatsCommand(program);
+registerLaunchboardCommand(program);
 
 // Default action (no command)
 program.action(() => {

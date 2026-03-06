@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+:root {
+  /* DARK THEME DEFAULT */
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #141414;
+  --bg-card: #1a1a1a;
+  --bg-card-hover: #222222;
+  --bg-column: #111111;
+
+  --border: #2a2a2a;
+  --border-hover: #3a3a3a;
+
+  --text-primary: #f5f5f5;
+  --text-secondary: #a0a0a0;
+  --text-muted: #666666;
+
+  --gold: #d4a853;
+  --gold-dim: #d4a85330;
+  --gold-hover: #e0b86a;
+
+  /* Priority colors */
+  --p1: #ef4444;
+  --p2: #f59e0b;
+  --p3: #22c55e;
+  --p4: #3b82f6;
+
+  /* Label colors */
+  --label-feat: #22c55e;
+  --label-bug: #ef4444;
+  --label-chore: #f59e0b;
+  --label-research: #3b82f6;
+  --label-docs: #06b6d4;
+
+  /* Status */
+  --done: #22c55e;
+  --testing: #f59e0b;
+  --progress: #3b82f6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-hover);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Gold pulse animation for "In Progress" dot */
+@keyframes gold-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-gold-pulse {
+  animation: gold-pulse 2s ease-in-out infinite;
+}
+
+/* Task card lift on hover */
+.task-card-hover {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.task-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border-color: var(--border-hover);
+}
+
+/* Drag overlay */
+.drag-overlay {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  transform: rotate(2deg);
+}
+
+/* Smooth transitions for sidebar */
+.sidebar-transition {
+  transition: width 0.2s ease;
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+/* Progress bar */
+.progress-bar {
+  transition: width 0.3s ease;
+}
+
+/* Select dropdown styling */
+select {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+select:focus {
+  border-color: var(--gold);
+  outline: none;
+}
+
+/* Input styling */
+input[type='text'],
+input[type='search'],
+input[type='number'],
+input[type='date'],
+textarea {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+input:focus,
+textarea:focus {
+  border-color: var(--gold);
+  outline: none;
+}

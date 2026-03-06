@@ -5,6 +5,16 @@ All notable changes to OMO Suites will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-03-07
+
+### Added
+- Launchboard included as monorepo package (`packages/launchboard/`)
+- CLI commands: `omocs launchboard setup|start|status`
+- CLI alias: `omocs lb` (shorthand)
+- TUI dashboard: Launchboard view with status and quick actions
+- Workspace support via `"workspaces": ["packages/*"]`
+- One install gets everything: OMO Suites + Launchboard
+
 ## [1.3.0] - 2026-03-07
 
 ### Added

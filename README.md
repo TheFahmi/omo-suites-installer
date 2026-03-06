@@ -67,6 +67,19 @@ omocs agent route debugging     # See which agent handles what
 omocs doctor                    # Verify everything works
 ```
 
+## 🚀 Launchboard
+
+AI-integrated Kanban board included with OMO Suites. Plan. Build. Launch.
+
+```bash
+omocs launchboard setup   # First-time setup
+omocs launchboard start   # Start the board
+omocs launchboard status  # Check status
+omocs lb status           # Shorthand alias
+```
+
+Backend: http://localhost:3030 | Frontend: http://localhost:3040
+
 ## Requirements
 
 - [Bun](https://bun.sh) runtime

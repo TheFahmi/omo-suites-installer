@@ -14,7 +14,7 @@ try {
 } catch {}
 export { VERSION };
 
-export const MENU_ITEMS = ['Profile', 'Agents', 'MCP', 'LSP', 'Doctor', 'Stats'] as const;
+export const MENU_ITEMS = ['Profile', 'Agents', 'MCP', 'LSP', 'Doctor', 'Stats', 'Launchboard'] as const;
 export type MenuItem = typeof MENU_ITEMS[number];
 
 export interface RenderContext {

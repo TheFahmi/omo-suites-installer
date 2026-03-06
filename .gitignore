@@ -4,3 +4,9 @@ bun.lockb
 *.log
 dist/
 .DS_Store
+packages/launchboard/node_modules/
+packages/launchboard/frontend/node_modules/
+packages/launchboard/frontend/.next/
+packages/launchboard/*.db
+packages/launchboard/*.db-wal
+packages/launchboard/*.db-shm
