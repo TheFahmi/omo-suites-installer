@@ -1,18 +1,18 @@
-// ─── Flowtask API Client ─────────────────────────────────────────────
-// Direct HTTP client for Flowtask task management.
+// ─── Launchboard API Client ─────────────────────────────────────────────
+// Direct HTTP client for Launchboard task management.
 // Used by OMO Suites plugin tools (omocs_task_*).
 
-const FLOWTASK_API = process.env.FLOWTASK_API_URL || 'http://localhost:3030';
+const LAUNCHBOARD_API = process.env.LAUNCHBOARD_API_URL || 'http://localhost:3030';
 
-export async function flowtaskApi(method: string, path: string, body?: any): Promise<any> {
-  const res = await fetch(`${FLOWTASK_API}${path}`, {
+export async function launchboardApi(method: string, path: string, body?: any): Promise<any> {
+  const res = await fetch(`${LAUNCHBOARD_API}${path}`, {
     method,
     headers: body ? { 'Content-Type': 'application/json' } : {},
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Flowtask API error ${res.status}: ${text}`);
+    throw new Error(`Launchboard API error ${res.status}: ${text}`);
   }
   return res.json();
 }
@@ -33,7 +33,7 @@ const COLUMN_NAME_MAP: Record<string, string> = {
 export async function resolveWorkspaceId(nameOrId?: string): Promise<string | undefined> {
   if (!nameOrId) return undefined;
   if (/^[0-9a-f-]{36}$/i.test(nameOrId)) return nameOrId;
-  const workspaces: any[] = await flowtaskApi('GET', '/api/workspaces');
+  const workspaces: any[] = await launchboardApi('GET', '/api/workspaces');
   const match = workspaces.find(
     (w) => w.name.toLowerCase() === nameOrId.toLowerCase()
   );
@@ -41,7 +41,7 @@ export async function resolveWorkspaceId(nameOrId?: string): Promise<string | un
 }
 
 export async function getDefaultWorkspaceId(): Promise<string> {
-  const workspaces: any[] = await flowtaskApi('GET', '/api/workspaces');
+  const workspaces: any[] = await launchboardApi('GET', '/api/workspaces');
   if (workspaces.length === 0) throw new Error('No workspaces exist. Create one first.');
   return workspaces[0].id;
 }
@@ -51,7 +51,7 @@ export async function resolveColumnId(
   columnName: string
 ): Promise<string | undefined> {
   if (/^[0-9a-f-]{36}$/i.test(columnName)) return columnName;
-  const ws: any = await flowtaskApi('GET', `/api/workspaces/${workspaceId}`);
+  const ws: any = await launchboardApi('GET', `/api/workspaces/${workspaceId}`);
   const col = ws.columns?.find(
     (c: any) => c.name.toLowerCase() === columnName.toLowerCase()
   );
@@ -60,7 +60,7 @@ export async function resolveColumnId(
 
 export async function resolveTaskId(taskIdOrShort: string): Promise<string> {
   if (/^[0-9a-f-]{36}$/i.test(taskIdOrShort)) return taskIdOrShort;
-  const tasks: any[] = await flowtaskApi('GET', '/api/tasks');
+  const tasks: any[] = await launchboardApi('GET', '/api/tasks');
   const match = tasks.find(
     (t) => t.shortId?.toLowerCase() === taskIdOrShort.toLowerCase()
   );
@@ -94,7 +94,7 @@ export async function listTasks(params?: {
   if (params?.priority) query.set('priority', String(params.priority));
   if (params?.search) query.set('search', params.search);
 
-  return flowtaskApi('GET', `/api/tasks?${query}`);
+  return launchboardApi('GET', `/api/tasks?${query}`);
 }
 
 export async function createTask(data: {
@@ -115,7 +115,7 @@ export async function createTask(data: {
   // Resolve label names to IDs
   let labelIds: string[] | undefined;
   if (data.labels && data.labels.length > 0) {
-    const ws: any = await flowtaskApi('GET', `/api/workspaces/${wsId}`);
+    const ws: any = await launchboardApi('GET', `/api/workspaces/${wsId}`);
     labelIds = [];
     for (const name of data.labels) {
       const label = ws.labels?.find(
@@ -132,7 +132,7 @@ export async function createTask(data: {
     columnId = await resolveColumnId(wsId, colName);
   }
 
-  return flowtaskApi('POST', '/api/tasks', {
+  return launchboardApi('POST', '/api/tasks', {
     workspaceId: wsId,
     title: data.title,
     priority: data.priority ?? 3,
@@ -166,24 +166,24 @@ export async function updateTask(
   if (data.aiAssisted !== undefined) body.aiAssisted = data.aiAssisted;
 
   if (data.column) {
-    const task: any = await flowtaskApi('GET', `/api/tasks/${resolvedId}`);
+    const task: any = await launchboardApi('GET', `/api/tasks/${resolvedId}`);
     const colName = COLUMN_NAME_MAP[data.column.toLowerCase()] || data.column;
     const colId = await resolveColumnId(task.workspaceId, colName);
     if (colId) body.columnId = colId;
   }
 
-  return flowtaskApi('PATCH', `/api/tasks/${resolvedId}`, body);
+  return launchboardApi('PATCH', `/api/tasks/${resolvedId}`, body);
 }
 
 export async function moveTask(taskId: string, column: string): Promise<any> {
   const resolvedId = await resolveTaskId(taskId);
-  const task: any = await flowtaskApi('GET', `/api/tasks/${resolvedId}`);
+  const task: any = await launchboardApi('GET', `/api/tasks/${resolvedId}`);
   const colName = COLUMN_NAME_MAP[column.toLowerCase()] || column;
   const colId = await resolveColumnId(task.workspaceId, colName);
 
   if (!colId) throw new Error(`Column not found: ${column}`);
 
-  return flowtaskApi('POST', `/api/tasks/${resolvedId}/move`, {
+  return launchboardApi('POST', `/api/tasks/${resolvedId}/move`, {
     columnId: colId,
     position: 0,
   });

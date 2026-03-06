@@ -19,7 +19,7 @@ import { agents, categoryRouting, getAgentForCategory, listCategories, listAgent
 import { profiles, profilesList, getProfile } from "./data/profiles";
 import { mcpServers, listMcpKeys, getMcpServer } from "./data/mcp-registry";
 import { lspServers, listLspKeys } from "./data/lsp-registry";
-import { listTasks, createTask, updateTask, moveTask } from "./data/flowtask";
+import { listTasks, createTask, updateTask, moveTask } from "./data/launchboard";
 
 // ─── Config Helpers ──────────────────────────────────────────────────
 
@@ -589,10 +589,10 @@ const OmoSuitesPlugin: Plugin = async (ctx) => {
       }),
 
       // ═══════════════════════════════════════════════════════════════
-      // 10. Flowtask integration
+      // 10. Launchboard integration
       // ═══════════════════════════════════════════════════════════════
       omocs_task_list: tool({
-        description: "List tasks from Flowtask board. Filter by workspace, column, priority, or search query.",
+        description: "List tasks from Launchboard board. Filter by workspace, column, priority, or search query.",
         args: {
           workspace: tool.schema.string().optional().describe("Workspace name"),
           column: tool.schema.string().optional().describe("Column: backlog, planned, ready, in-progress, testing, done"),
@@ -613,7 +613,7 @@ const OmoSuitesPlugin: Plugin = async (ctx) => {
             }
 
             const priorityNames: Record<number, string> = { 1: '🔴 critical', 2: '🟠 high', 3: '🟡 medium', 4: '🟢 low' };
-            const lines = [`# 📋 Flowtask — ${tasks.length} task(s)`, ""];
+            const lines = [`# 📋 Launchboard — ${tasks.length} task(s)`, ""];
 
             for (const t of tasks) {
               const labels = t.labels?.map((l: any) => l.name).join(", ") || "none";
@@ -631,7 +631,7 @@ const OmoSuitesPlugin: Plugin = async (ctx) => {
       }),
 
       omocs_task_create: tool({
-        description: "Create a new task on the Flowtask board.",
+        description: "Create a new task on the Launchboard board.",
         args: {
           title: tool.schema.string().describe("Task title"),
           priority: tool.schema.number().optional().describe("1=critical, 2=high, 3=medium, 4=low (default: 3)"),
@@ -722,9 +722,9 @@ const OmoSuitesPlugin: Plugin = async (ctx) => {
         `- Health check: omocs_doctor\n` +
         `- Config: omocs_config_get, omocs_account_status, omocs_stats_summary\n` +
         `- Categories: omocs_categories\n` +
-        `- Flowtask: omocs_task_list, omocs_task_create, omocs_task_update, omocs_task_move\n` +
+        `- Launchboard: omocs_task_list, omocs_task_create, omocs_task_update, omocs_task_move\n` +
         `\n` +
-        `OMO Suites has 13 profiles (vs OCS's 8), 15 agents, 32 task categories, 11 MCP servers, 10 LSP configs, and Flowtask integration.`
+        `OMO Suites has 13 profiles (vs OCS's 8), 15 agents, 32 task categories, 11 MCP servers, 10 LSP configs, and Launchboard integration.`
       );
     },
   };
