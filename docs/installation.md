@@ -17,10 +17,15 @@ curl -fsSL https://raw.githubusercontent.com/TheFahmi/omo-suites-installer/main/
 
 # Or manually
 git clone https://github.com/TheFahmi/omo-suites-installer.git ~/.omocs
-cd ~/.omocs && bun install && bun link
+cd ~/.omocs && bun install && bun run build
+
+# Then run the setup wizard (recommended — handles everything)
+omocs init
 ```
 
 > **Note**: Requires [Bun](https://bun.sh) runtime. The installer handles that if you don't have it.
+>
+> **New in v1.5.0**: `omocs init` is now the recommended setup method. It auto-installs oh-my-opencode, registers plugins to `opencode.json`, and optionally sets up Launchboard — all in one command.
 
 ## For LLM Agents
 
@@ -45,8 +50,8 @@ Ask the user these questions:
    - Ollama/local models — installed?
 
 2. **Do you have oh-my-opencode installed?**
-   - If **yes** → OMO Suites will integrate with it
-   - If **no** → OMO Suites works standalone too
+   - If **yes** → `omocs init` will detect it automatically
+   - If **no** → `omocs init` will install it for you
 
 3. **What's your priority?**
    - Maximum quality (use best models)
@@ -85,32 +90,30 @@ bun install
 bun run build
 ```
 
-### Step 4: Register as OpenCode plugin
+### Step 4: Run `omocs init` (Recommended — One Command Setup)
 
-Add OMO Suites to your `opencode.json` (usually at `~/.config/opencode/opencode.json`):
-
-```jsonc
-{
-  // ... existing config ...
-  "plugin": [
-    "oh-my-opencode",  // if you have it
-    "~/.omocs"         // OMO Suites
-  ]
-}
+```bash
+omocs init
 ```
 
-Or if using npm-style plugins:
-```jsonc
-{
-  "plugins": {
-    "omocs": {
-      "source": "local:~/.omocs"
-    }
-  }
-}
-```
+**`omocs init` handles everything automatically:**
+- ✅ Checks OpenCode installation
+- ✅ Installs oh-my-opencode (if not already installed)
+- ✅ Registers both `oh-my-opencode` and `omocs` as plugins in `opencode.json`
+- ✅ Optionally sets up Launchboard (AI Kanban board)
+- ✅ Sets master password for API key encryption
+- ✅ Configures API providers and keys
+- ✅ Selects and applies a profile
+- ✅ Detects project stack and suggests LSP servers
+- ✅ Configures MCP tools
+
+The wizard is interactive and guides you through each step. **This is the recommended setup method** — no need to manually edit `opencode.json` or install oh-my-opencode separately.
+
+> **For non-interactive / CI environments**, see the [Manual Setup](#manual-setup-advanced) section below.
 
 ### Step 5: Choose a profile
+
+`omocs init` will prompt you to choose a profile during setup. If you want to change it later, use:
 
 Based on user's providers, recommend a profile:
 
@@ -171,6 +174,52 @@ Agents automatically have access to `omocs_*` tools. Try:
 - "Which agent should handle this frontend task?"
 - "Install the context7 MCP server"
 - "Run a health check"
+
+---
+
+## Manual Setup (Advanced)
+
+If you prefer to set things up manually (or are in a non-interactive environment), you can skip `omocs init` and do these steps yourself:
+
+### Install oh-my-opencode
+
+```bash
+npm install -g oh-my-opencode
+# or
+bun add -g oh-my-opencode
+```
+
+### Register plugins in opencode.json
+
+Add OMO Suites and oh-my-opencode to your `opencode.json` (usually at `~/.config/opencode/opencode.json`):
+
+```jsonc
+{
+  // ... existing config ...
+  "plugin": [
+    "oh-my-opencode",  // if you have it
+    "~/.omocs"         // OMO Suites
+  ]
+}
+```
+
+Or if using npm-style plugins:
+```jsonc
+{
+  "plugins": {
+    "omocs": {
+      "source": "local:~/.omocs"
+    }
+  }
+}
+```
+
+### Setup Launchboard (optional)
+
+```bash
+omocs launchboard setup
+omocs launchboard start
+```
 
 ---
 
