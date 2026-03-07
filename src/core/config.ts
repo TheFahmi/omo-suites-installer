@@ -1,4 +1,4 @@
-import { mkdirSync, existsSync } from 'fs';
+import { mkdirSync, existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 
@@ -69,8 +69,7 @@ export async function readConfig(): Promise<OmocsConfig> {
     return defaultConfig();
   }
   try {
-    const file = Bun.file(CONFIG_FILE);
-    const text = await file.text();
+    const text = readFileSync(CONFIG_FILE, 'utf-8');
     const parsed = JSON.parse(text);
     return { ...defaultConfig(), ...parsed };
   } catch {
@@ -81,7 +80,7 @@ export async function readConfig(): Promise<OmocsConfig> {
 // ─── Write Config ────────────────────────────────────────────────────
 export async function writeConfig(config: OmocsConfig): Promise<void> {
   ensureConfigDir();
-  await Bun.write(CONFIG_FILE, JSON.stringify(config, null, 2));
+  writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
 }
 
 // ─── Update Config ───────────────────────────────────────────────────

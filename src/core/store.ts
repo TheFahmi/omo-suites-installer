@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { getConfigDir, ensureConfigDir } from './config.ts';
 
@@ -18,8 +18,7 @@ export class Store<T extends Record<string, unknown>> {
       return { ...this.defaults };
     }
     try {
-      const file = Bun.file(this.filePath);
-      const text = await file.text();
+      const text = readFileSync(this.filePath, 'utf-8');
       return { ...this.defaults, ...JSON.parse(text) };
     } catch {
       return { ...this.defaults };
@@ -27,7 +26,7 @@ export class Store<T extends Record<string, unknown>> {
   }
 
   async write(data: T): Promise<void> {
-    await Bun.write(this.filePath, JSON.stringify(data, null, 2));
+    writeFileSync(this.filePath, JSON.stringify(data, null, 2));
   }
 
   async update(updater: (data: T) => void): Promise<T> {

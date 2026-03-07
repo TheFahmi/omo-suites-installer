@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
 // If no command given (just `omocs`), launch TUI dashboard
 if (process.argv.length <= 2) {

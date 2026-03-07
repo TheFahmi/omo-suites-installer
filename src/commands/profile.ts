@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
 import ora from 'ora';
+import { readFileSync } from 'fs';
 import { readConfig, setActiveProfile } from '../core/config.ts';
 import { profiles, getProfile, listProfileKeys } from '../data/profiles.ts';
 import { mergeProfile, readOpenCodeConfig } from '../core/opencode.ts';
@@ -232,7 +233,7 @@ export function registerProfileCommand(program: Command): void {
     .argument('<file>', 'Path to JSON file')
     .action(async (file: string) => {
       try {
-        const content = await Bun.file(file).text();
+        const content = readFileSync(file, 'utf-8');
         const data = JSON.parse(content);
 
         if (!data.key || !data.name || !data.agents) {

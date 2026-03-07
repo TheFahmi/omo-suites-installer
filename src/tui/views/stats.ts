@@ -1,4 +1,4 @@
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import { gold, goldBold, dim, bold, white, green, cyan, yellow, gray } from '../utils.ts';
@@ -30,8 +30,7 @@ export async function loadStats(state: StatsViewState): Promise<void> {
   }
 
   try {
-    const file = Bun.file(statsPath);
-    const text = await file.text();
+    const text = readFileSync(statsPath, 'utf-8');
     state.data = JSON.parse(text);
     state.loaded = true;
   } catch {

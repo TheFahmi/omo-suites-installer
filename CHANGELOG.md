@@ -5,6 +5,14 @@ All notable changes to OMO Suites will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.2] - 2026-03-07
+
+### Fixed
+- **Node.js compatibility** — replaced all Bun-specific APIs (`Bun.file()`, `Bun.write()`, `Bun.spawn()`) with Node.js `fs` and `child_process` equivalents
+- `Bun is not defined` errors when running via `npm i -g` on systems without Bun
+- `bun:sqlite` replaced with `better-sqlite3` for cross-runtime SQLite support
+- All 10 source files updated: config.ts, store.ts, opencode.ts, profile.ts, stats.ts, agents.ts, detect.ts, shell.ts, tui/views/stats.ts, tui/commands.ts
+
 ## [1.5.1] - 2026-03-07
 
 ### Fixed

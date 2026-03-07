@@ -1,5 +1,5 @@
-import { existsSync } from 'fs';
-import { join, resolve } from 'path';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { join, resolve, dirname } from 'path';
 import { homedir } from 'os';
 import { commandExists, getCommandVersion } from '../utils/shell.ts';
 
@@ -53,8 +53,7 @@ export async function readOpenCodeConfig(): Promise<{ config: OpenCodeConfig; pa
   for (const configPath of getConfigPaths()) {
     if (existsSync(configPath)) {
       try {
-        const file = Bun.file(configPath);
-        const text = await file.text();
+        const text = readFileSync(configPath, 'utf-8');
         return { config: JSON.parse(text), path: configPath };
       } catch {
         continue;
@@ -67,7 +66,8 @@ export async function readOpenCodeConfig(): Promise<{ config: OpenCodeConfig; pa
 // ─── Write OpenCode Config ───────────────────────────────────────────
 export async function writeOpenCodeConfig(config: OpenCodeConfig, path?: string): Promise<string> {
   const targetPath = path || join(process.cwd(), '.opencode.json');
-  await Bun.write(targetPath, JSON.stringify(config, null, 2));
+  mkdirSync(dirname(targetPath), { recursive: true });
+  writeFileSync(targetPath, JSON.stringify(config, null, 2));
   return targetPath;
 }
 
@@ -88,7 +88,8 @@ export async function mergeProfile(profile: ProfileConfig): Promise<{ config: Op
   }
 
   const configPath = existing?.path || join(process.cwd(), '.opencode.json');
-  await Bun.write(configPath, JSON.stringify(config, null, 2));
+  mkdirSync(dirname(configPath), { recursive: true });
+  writeFileSync(configPath, JSON.stringify(config, null, 2));
 
   return { config, path: configPath };
 }

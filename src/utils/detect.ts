@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, statSync } from 'fs';
+import { existsSync, readdirSync, statSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 export interface DetectedStack {
@@ -44,7 +44,7 @@ function checkPackageJsonDeps(base: string, depName: string): boolean {
   const pkgPath = join(base, 'package.json');
   if (!existsSync(pkgPath)) return false;
   try {
-    const pkg = JSON.parse(Bun.file(pkgPath).text() as unknown as string);
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
     const deps = { ...pkg.dependencies, ...pkg.devDependencies };
     return depName in deps;
   } catch {

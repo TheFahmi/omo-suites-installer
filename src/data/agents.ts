@@ -1,4 +1,6 @@
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
 
 export interface AgentRole {
   id: string;
@@ -14,7 +16,8 @@ export interface AgentRole {
 
 // Resolve agents directory relative to project root
 function getAgentsDir(): string {
-  return join(import.meta.dir, '..', '..', 'agents');
+  const __dirname = typeof import.meta.dirname === 'string' ? import.meta.dirname : dirname(fileURLToPath(import.meta.url));
+  return join(__dirname, '..', '..', 'agents');
 }
 
 export const agents: Record<string, AgentRole> = {
@@ -246,8 +249,7 @@ export function getAgentPromptPath(agent: AgentRole): string {
 export async function loadAgentPrompt(agent: AgentRole): Promise<string> {
   const path = getAgentPromptPath(agent);
   try {
-    const file = Bun.file(path);
-    return await file.text();
+    return readFileSync(path, 'utf-8');
   } catch {
     return `System prompt for ${agent.name} — ${agent.description}`;
   }

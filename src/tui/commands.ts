@@ -353,8 +353,8 @@ async function statsCommand(): Promise<string[]> {
   }
 
   try {
-    const file = Bun.file(statsPath);
-    const text = await file.text();
+    const { readFileSync } = await import('fs');
+    const text = readFileSync(statsPath, 'utf-8');
     const data = JSON.parse(text);
     const lines: string[] = [goldBold('═══ Stats ═══'), ''];
     lines.push(`  ${bold('Total Tokens:')} ${white(formatNumber(data.totalTokens || 0))}`);

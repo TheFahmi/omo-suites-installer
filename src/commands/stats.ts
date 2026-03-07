@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
-import { existsSync } from 'fs';
+import { existsSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import { createTable, heading, success, fail, warn, info, icons, handleError, infoBox, successBox } from '../utils/ui.ts';
@@ -121,7 +121,7 @@ export function registerStatsCommand(program: Command): void {
         const spinner = ora('Reading database...').start();
 
         try {
-          const { Database } = await import('bun:sqlite');
+          const Database = (await import('better-sqlite3')).default;
           const db = new Database(dbPath, { readonly: true });
 
           const { start, end, label } = getDateRange(period);
@@ -129,12 +129,12 @@ export function registerStatsCommand(program: Command): void {
           const endStr = end.toISOString();
 
           // Count sessions
-          const sessionCount = db.query(
+          const sessionCount = db.prepare(
             'SELECT COUNT(*) as count FROM sessions WHERE created_at >= ? AND created_at <= ?'
           ).get(startStr, endStr) as { count: number } | null;
 
           // Get message stats
-          const messageStats = db.query(`
+          const messageStats = db.prepare(`
             SELECT
               COUNT(*) as message_count,
               COALESCE(SUM(input_tokens), 0) as total_input,
@@ -144,7 +144,7 @@ export function registerStatsCommand(program: Command): void {
           `).get(startStr, endStr) as { message_count: number; total_input: number; total_output: number } | null;
 
           // Get daily breakdown
-          const dailyStats = db.query(`
+          const dailyStats = db.prepare(`
             SELECT
               DATE(created_at) as date,
               COUNT(*) as messages,
@@ -202,7 +202,7 @@ export function registerStatsCommand(program: Command): void {
                 `${d.date},${d.messages},${d.input_tokens},${d.output_tokens},${d.input_tokens + d.output_tokens},${estimateCost(d.input_tokens, d.output_tokens).toFixed(2)}`
               ),
             ];
-            await Bun.write(options.export, csvLines.join('\n'));
+            writeFileSync(options.export, csvLines.join('\n'));
             success(`Exported to ${options.export}`);
           }
 
