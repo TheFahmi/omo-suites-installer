@@ -5,6 +5,13 @@ All notable changes to OMO Suites will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.4] - 2026-03-07
+
+### Added
+- Auto-update on every CLI run — checks npm for new version, updates automatically
+- 5-minute cooldown between checks to avoid spamming npm registry
+- Disable with `OMOCS_NO_UPDATE=1` env var
+
 ## [1.5.3] - 2026-03-07
 
 ### Fixed
