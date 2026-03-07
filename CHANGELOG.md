@@ -5,6 +5,12 @@ All notable changes to OMO Suites will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-03-07
+
+### Added
+- Auto-update check when OpenCode starts (plugin load) — checks npm, auto-installs if newer version available
+- Shares same 5-min cache as CLI auto-update to avoid duplicate checks
+
 ## [1.7.9] - 2026-03-07
 
 ### Fixed

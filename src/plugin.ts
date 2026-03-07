@@ -126,10 +126,62 @@ function formatCategoryList(): string {
   return lines.join("\n");
 }
 
+// ─── Auto-Update Check ───────────────────────────────────────────────
+
+function checkPluginUpdate() {
+  const CACHE_DIR = join(homedir(), '.omocs');
+  const CACHE_FILE = join(CACHE_DIR, '.update-check');
+  const CHECK_INTERVAL_MS = 5 * 60 * 1000;
+  const PACKAGE_NAME = 'omo-suites';
+
+  try {
+    // Check cache
+    if (existsSync(CACHE_FILE)) {
+      const cache = JSON.parse(readFileSync(CACHE_FILE, 'utf-8'));
+      if (Date.now() - cache.lastCheck < CHECK_INTERVAL_MS) {
+        if (cache.latestVersion && cache.latestVersion !== PLUGIN_VERSION) {
+          console.log(`[OMO Suites] Update available: ${PLUGIN_VERSION} -> ${cache.latestVersion}. Run: npm install -g ${PACKAGE_NAME}@latest`);
+        }
+        return;
+      }
+    }
+
+    // Background check — don't block plugin loading
+    const { execSync: execSyncBg } = require('child_process');
+    try {
+      const latest = execSyncBg(`npm view ${PACKAGE_NAME} version`, {
+        encoding: 'utf-8', timeout: 10000, stdio: ['pipe', 'pipe', 'pipe']
+      }).trim();
+
+      // Write cache
+      if (!existsSync(CACHE_DIR)) {
+        const { mkdirSync } = require('fs');
+        mkdirSync(CACHE_DIR, { recursive: true });
+      }
+      writeFileSync(CACHE_FILE, JSON.stringify({ lastCheck: Date.now(), latestVersion: latest }));
+
+      if (latest !== PLUGIN_VERSION) {
+        console.log(`[OMO Suites] Update available: ${PLUGIN_VERSION} -> ${latest}. Run: npm install -g ${PACKAGE_NAME}@latest`);
+        // Auto-update silently
+        try {
+          execSyncBg(`npm install -g ${PACKAGE_NAME}@latest`, {
+            encoding: 'utf-8', timeout: 60000, stdio: ['pipe', 'pipe', 'pipe']
+          });
+          console.log(`[OMO Suites] Auto-updated to v${latest}. Restart OpenCode to use.`);
+        } catch {}
+      }
+    } catch {}
+  } catch {}
+}
+
 // ─── Plugin Definition ───────────────────────────────────────────────
 
 const OmoSuitesPlugin: Plugin = async (ctx) => {
   console.log(`[OMO Suites] v${PLUGIN_VERSION} loaded`);
+
+  // Check for updates on plugin load (OpenCode startup)
+  checkPluginUpdate();
+
   return {
     tool: {
       // ═══════════════════════════════════════════════════════════════
