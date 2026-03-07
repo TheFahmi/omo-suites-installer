@@ -103,7 +103,8 @@ export async function checkAndUpdate(currentVersion: string): Promise<boolean> {
       console.log(chalk.green(`✅ Updated to v${latestVersion}. Restarting...\n`));
       // Re-exec the CLI with same args
       try {
-        execSync(`${process.argv[0]} ${process.argv.slice(1).join(' ')}`, {
+        const args = process.argv.slice(1).map(a => a.includes(' ') ? `"${a}"` : a).join(' ');
+        execSync(`"${process.argv[0]}" ${args}`, {
           stdio: 'inherit',
           env: { ...process.env, OMOCS_NO_UPDATE: '1' }, // Prevent infinite loop
         });
