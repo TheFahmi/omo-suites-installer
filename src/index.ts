@@ -9,6 +9,7 @@ import { registerAgentCommand } from './commands/agent.ts';
 import { registerLspCommand } from './commands/lsp.ts';
 import { registerMcpCommand } from './commands/mcp.ts';
 import { registerStatsCommand } from './commands/stats.ts';
+import { registerStatusCommand } from './commands/status.ts';
 import { registerLaunchboardCommand } from './commands/launchboard.ts';
 
 import { readFileSync, existsSync } from 'fs';
@@ -54,6 +55,7 @@ registerAgentCommand(program);
 registerLspCommand(program);
 registerMcpCommand(program);
 registerStatsCommand(program);
+registerStatusCommand(program);
 registerLaunchboardCommand(program);
 
 // Default action (no command)

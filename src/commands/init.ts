@@ -188,81 +188,244 @@ export function registerInitCommand(program: Command): void {
         heading('Step 5: Provider Authentication');
         info('Configure your subscriptions for oh-my-opencode.');
 
-        // Ask subscription questions
-        const { hasClaude } = await inquirer.prompt([{
-          type: 'confirm',
-          name: 'hasClaude',
-          message: 'Do you have a Claude Pro/Max subscription?',
-          default: false,
+        // Ask if user wants to use 1mr.tech (API Token Reseller)
+        const { providerType } = await inquirer.prompt([{
+          type: 'list',
+          name: 'providerType',
+          message: 'How do you want to configure providers?',
+          choices: [
+            { name: 'Individual subscriptions (Claude, ChatGPT, Gemini, etc.)', value: 'individual' },
+            { name: '1mr.tech — API Token Reseller (single key, multiple models)', value: '1mr' },
+          ],
         }]);
 
-        let claudeFlag = 'no';
-        if (hasClaude) {
-          const { isMax20 } = await inquirer.prompt([{
-            type: 'confirm',
-            name: 'isMax20',
-            message: 'Are you on max20 (20x mode)?',
-            default: false,
+        let use1mr = false;
+        let oneMrApiKey = '';
+        let oneMrModel = 'claude-sonnet-4-6';
+        let oneMrTokensRemaining = 0;
+
+        if (providerType === '1mr') {
+          use1mr = true;
+
+          // Prompt for API key
+          const { apiKey } = await inquirer.prompt([{
+            type: 'password',
+            name: 'apiKey',
+            message: 'Enter your 1mr.tech API key:',
+            mask: '*',
+            validate: (input: string) => input.length > 0 ? true : 'API key required',
           }]);
-          claudeFlag = isMax20 ? 'max20' : 'yes';
+          oneMrApiKey = apiKey;
+
+          // Validate the API key
+          const validateSpinner = ora('Validating API key with 1mr.tech...').start();
+          let validationPassed = false;
+
+          try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 10000);
+
+            const response = await fetch('https://api.1mr.tech/v1/usage', {
+              method: 'GET',
+              headers: { 'Authorization': `Bearer ${oneMrApiKey}` },
+              signal: controller.signal,
+            });
+            clearTimeout(timeout);
+
+            if (response.ok) {
+              const data = await response.json() as {
+                tokens_remaining?: number;
+                tokens_used?: number;
+                api_key_status?: string;
+              };
+              oneMrTokensRemaining = data.tokens_remaining || 0;
+              validationPassed = true;
+              validateSpinner.succeed(chalk.green(
+                `API key valid! Token balance: ${oneMrTokensRemaining.toLocaleString()} remaining`
+              ));
+            } else {
+              validateSpinner.fail(chalk.red('Invalid API key. Get one at https://1mr.tech'));
+              const { continueAnyway } = await inquirer.prompt([{
+                type: 'confirm',
+                name: 'continueAnyway',
+                message: 'Continue with this key anyway? (config will be written but may not work)',
+                default: false,
+              }]);
+              if (!continueAnyway) {
+                info('Setup cancelled. Re-run omocs init when you have a valid key.');
+                return;
+              }
+              validationPassed = true; // User chose to continue
+            }
+          } catch (err) {
+            validateSpinner.warn(chalk.yellow('Could not reach 1mr.tech API — skipping validation'));
+            const { continueOffline } = await inquirer.prompt([{
+              type: 'confirm',
+              name: 'continueOffline',
+              message: 'Continue without validation? (config will be written)',
+              default: true,
+            }]);
+            if (!continueOffline) {
+              info('Setup cancelled.');
+              return;
+            }
+            validationPassed = true;
+          }
+
+          // Prompt for default model
+          const { model } = await inquirer.prompt([{
+            type: 'list',
+            name: 'model',
+            message: 'Select default model:',
+            choices: [
+              { name: 'claude-sonnet-4-6 (Balanced — recommended)', value: 'claude-sonnet-4-6' },
+              { name: 'claude-opus-4-6 (Premium — uses more tokens)', value: 'claude-opus-4-6' },
+              { name: 'claude-haiku-4-5 (Fast — cheapest)', value: 'claude-haiku-4-5' },
+              { name: 'gpt-5.3-codex (Code-optimized)', value: 'gpt-5.3-codex' },
+            ],
+            default: 'claude-sonnet-4-6',
+          }]);
+          oneMrModel = model;
+
+          // Write opencode.json for 1mr.tech
+          const opencodeConfigPath = findOpencodeConfig();
+          let opencodeConfig: Record<string, any> = {};
+          if (existsSync(opencodeConfigPath)) {
+            try {
+              opencodeConfig = JSON.parse(readFileSync(opencodeConfigPath, 'utf-8'));
+            } catch {}
+          }
+
+          opencodeConfig.provider = {
+            name: 'openai-compatible',
+            model: oneMrModel,
+            baseURL: 'https://api.1mr.tech/v1',
+            apiKey: oneMrApiKey,
+          };
+
+          // Ensure parent directory exists
+          const configDir = dirname(opencodeConfigPath);
+          if (!existsSync(configDir)) {
+            mkdirSync(configDir, { recursive: true });
+          }
+          writeFileSync(opencodeConfigPath, JSON.stringify(opencodeConfig, null, 2));
+
+          // Write oh-my-opencode.json
+          const ohmyConfigPath = resolve(process.cwd(), 'oh-my-opencode.json');
+          const ohmyConfig = {
+            subscription: 'custom',
+            provider: {
+              baseURL: 'https://api.1mr.tech/v1',
+              apiKey: oneMrApiKey,
+            },
+            agents: {
+              sisyphus: { enabled: true, model: 'claude-opus-4-6' },
+              prometheus: { enabled: true },
+              atlas: { enabled: true },
+              metis: { enabled: true },
+              momus: { enabled: true },
+              hephaestus: { enabled: true },
+              oracle: { enabled: true },
+              librarian: { enabled: true },
+            },
+          };
+          writeFileSync(ohmyConfigPath, JSON.stringify(ohmyConfig, null, 2));
+
+          success('1mr.tech provider configured');
+          success(`opencode.json written`);
+          success(`oh-my-opencode.json written`);
         }
 
-        const { hasOpenAI } = await inquirer.prompt([{
-          type: 'confirm',
-          name: 'hasOpenAI',
-          message: 'Do you have a ChatGPT Plus subscription?',
-          default: false,
-        }]);
+        // Individual subscription flow (original)
+        let hasClaude = false;
+        let claudeFlag = 'no';
+        let hasOpenAI = false;
+        let hasGemini = false;
+        let hasCopilot = false;
+        let hasOpenCodeZen = false;
+        let hasZai = false;
 
-        const { hasGemini } = await inquirer.prompt([{
-          type: 'confirm',
-          name: 'hasGemini',
-          message: 'Do you want to integrate Gemini models?',
-          default: false,
-        }]);
+        if (!use1mr) {
+          const claudeResult = await inquirer.prompt([{
+            type: 'confirm',
+            name: 'hasClaude',
+            message: 'Do you have a Claude Pro/Max subscription?',
+            default: false,
+          }]);
+          hasClaude = claudeResult.hasClaude;
 
-        const { hasCopilot } = await inquirer.prompt([{
-          type: 'confirm',
-          name: 'hasCopilot',
-          message: 'Do you have a GitHub Copilot subscription?',
-          default: false,
-        }]);
-
-        const { hasOpenCodeZen } = await inquirer.prompt([{
-          type: 'confirm',
-          name: 'hasOpenCodeZen',
-          message: 'Do you have access to OpenCode Zen?',
-          default: false,
-        }]);
-
-        const { hasZai } = await inquirer.prompt([{
-          type: 'confirm',
-          name: 'hasZai',
-          message: 'Do you have a Z.ai Coding Plan subscription?',
-          default: false,
-        }]);
-
-        // Build and run oh-my-opencode install command
-        const omoFlags = [
-          `--claude=${claudeFlag}`,
-          `--openai=${hasOpenAI ? 'yes' : 'no'}`,
-          `--gemini=${hasGemini ? 'yes' : 'no'}`,
-          `--copilot=${hasCopilot ? 'yes' : 'no'}`,
-          `--opencode-zen=${hasOpenCodeZen ? 'yes' : 'no'}`,
-          `--zai-coding-plan=${hasZai ? 'yes' : 'no'}`,
-        ].join(' ');
-
-        const omoInstallSpinner = ora('Running oh-my-opencode installer...').start();
-        try {
-          try {
-            execSync(`bunx oh-my-opencode install --no-tui ${omoFlags}`, { stdio: 'pipe', timeout: 120000 });
-          } catch {
-            // Fallback to npx if bunx fails
-            execSync(`npx oh-my-opencode install --no-tui ${omoFlags}`, { stdio: 'pipe', timeout: 120000 });
+          if (hasClaude) {
+            const { isMax20 } = await inquirer.prompt([{
+              type: 'confirm',
+              name: 'isMax20',
+              message: 'Are you on max20 (20x mode)?',
+              default: false,
+            }]);
+            claudeFlag = isMax20 ? 'max20' : 'yes';
           }
-          omoInstallSpinner.succeed('oh-my-opencode configured');
-        } catch {
-          omoInstallSpinner.warn('oh-my-opencode installer failed — you can run it manually later');
+
+          const openaiResult = await inquirer.prompt([{
+            type: 'confirm',
+            name: 'hasOpenAI',
+            message: 'Do you have a ChatGPT Plus subscription?',
+            default: false,
+          }]);
+          hasOpenAI = openaiResult.hasOpenAI;
+
+          const geminiResult = await inquirer.prompt([{
+            type: 'confirm',
+            name: 'hasGemini',
+            message: 'Do you want to integrate Gemini models?',
+            default: false,
+          }]);
+          hasGemini = geminiResult.hasGemini;
+
+          const copilotResult = await inquirer.prompt([{
+            type: 'confirm',
+            name: 'hasCopilot',
+            message: 'Do you have a GitHub Copilot subscription?',
+            default: false,
+          }]);
+          hasCopilot = copilotResult.hasCopilot;
+
+          const zenResult = await inquirer.prompt([{
+            type: 'confirm',
+            name: 'hasOpenCodeZen',
+            message: 'Do you have access to OpenCode Zen?',
+            default: false,
+          }]);
+          hasOpenCodeZen = zenResult.hasOpenCodeZen;
+
+          const zaiResult = await inquirer.prompt([{
+            type: 'confirm',
+            name: 'hasZai',
+            message: 'Do you have a Z.ai Coding Plan subscription?',
+            default: false,
+          }]);
+          hasZai = zaiResult.hasZai;
+
+          // Build and run oh-my-opencode install command
+          const omoFlags = [
+            `--claude=${claudeFlag}`,
+            `--openai=${hasOpenAI ? 'yes' : 'no'}`,
+            `--gemini=${hasGemini ? 'yes' : 'no'}`,
+            `--copilot=${hasCopilot ? 'yes' : 'no'}`,
+            `--opencode-zen=${hasOpenCodeZen ? 'yes' : 'no'}`,
+            `--zai-coding-plan=${hasZai ? 'yes' : 'no'}`,
+          ].join(' ');
+
+          const omoInstallSpinner = ora('Running oh-my-opencode installer...').start();
+          try {
+            try {
+              execSync(`bunx oh-my-opencode install --no-tui ${omoFlags}`, { stdio: 'pipe', timeout: 120000 });
+            } catch {
+              // Fallback to npx if bunx fails
+              execSync(`npx oh-my-opencode install --no-tui ${omoFlags}`, { stdio: 'pipe', timeout: 120000 });
+            }
+            omoInstallSpinner.succeed('oh-my-opencode configured');
+          } catch {
+            omoInstallSpinner.warn('oh-my-opencode installer failed — you can run it manually later');
+          }
         }
 
         // If Gemini selected, add opencode-antigravity-auth plugin
@@ -293,6 +456,7 @@ export function registerInitCommand(program: Command): void {
 
         // Collect configured providers for summary
         const configuredProviders: string[] = [];
+        if (use1mr) configuredProviders.push('1mr.tech');
         if (hasClaude) configuredProviders.push(`Claude (${claudeFlag === 'max20' ? 'max20' : 'standard'})`);
         if (hasOpenAI) configuredProviders.push('ChatGPT Plus');
         if (hasGemini) configuredProviders.push('Gemini');
@@ -303,9 +467,17 @@ export function registerInitCommand(program: Command): void {
         // Show next steps
         if (configuredProviders.length > 0) {
           info('');
-          info(chalk.cyan('Next steps: Run `opencode auth login` to authenticate each provider:'));
-          for (const provider of configuredProviders) {
-            info(`  ${icons.check} ${provider}`);
+          if (use1mr) {
+            info(chalk.cyan('1mr.tech is ready to use! No additional auth needed.'));
+            if (oneMrTokensRemaining > 0) {
+              info(`  Token balance: ${chalk.bold(oneMrTokensRemaining.toLocaleString())} tokens remaining`);
+            }
+            info(`  Default model: ${chalk.bold(oneMrModel)}`);
+          } else {
+            info(chalk.cyan('Next steps: Run `opencode auth login` to authenticate each provider:'));
+            for (const provider of configuredProviders) {
+              info(`  ${icons.check} ${provider}`);
+            }
           }
         }
 
@@ -413,16 +585,22 @@ export function registerInitCommand(program: Command): void {
             : '',
           setupLaunchboard ? `${icons.check} Launchboard: ${chalk.bold('ready')} (omocs lb start)` : `${icons.cross} Launchboard: skipped`,
           `${icons.check} Profile: ${chalk.bold(profile.name)}`,
-          `${icons.check} Coder model: ${chalk.bold(profile.agents.coder)}`,
-          `${icons.check} Task model: ${chalk.bold(profile.agents.task)}`,
+          use1mr
+            ? `${icons.check} Default model: ${chalk.bold(oneMrModel)}`
+            : `${icons.check} Coder model: ${chalk.bold(profile.agents.coder)}`,
+          use1mr
+            ? (oneMrTokensRemaining > 0 ? `${icons.check} Token balance: ${chalk.bold(oneMrTokensRemaining.toLocaleString())}` : '')
+            : `${icons.check} Task model: ${chalk.bold(profile.agents.task)}`,
           `${icons.check} MCP tools: ${chalk.bold(installMcps.length.toString())} selected`,
           '',
           `${chalk.gray('Config:')} ~/.omocs/config.json`,
           `${chalk.gray('OpenCode:')} .opencode.json`,
           '',
-          configuredProviders.length > 0
-            ? `Next: Run ${chalk.cyan('opencode auth login')} to authenticate your providers.`
-            : `Next: Run ${chalk.cyan('omocs doctor')} to verify your setup.`,
+          use1mr
+            ? `Next: Run ${chalk.cyan('opencode')} to start coding!`
+            : configuredProviders.length > 0
+              ? `Next: Run ${chalk.cyan('opencode auth login')} to authenticate your providers.`
+              : `Next: Run ${chalk.cyan('omocs doctor')} to verify your setup.`,
         ].filter(Boolean);
 
         successBox('Setup Complete! 🎉', summaryLines.join('\n'));
