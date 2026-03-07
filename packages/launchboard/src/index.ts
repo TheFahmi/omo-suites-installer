@@ -3,6 +3,8 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import sessionsRoute from './routes/sessions';
 import boardRoute from './routes/board';
+import updateRoute from './routes/update';
+import { startupUpdateCheck, getUpdateStatus } from './utils/updater';
 
 const OPENCODE_API = process.env.OPENCODE_API_URL || 'http://localhost:1337';
 
@@ -14,6 +16,7 @@ app.use('*', logger());
 // Mount routes
 app.route('/api/sessions', sessionsRoute);
 app.route('/api/board', boardRoute);
+app.route('/api/update', updateRoute);
 
 // Health endpoint with OpenCode connectivity check
 app.get('/api/health', async (c) => {
@@ -25,6 +28,8 @@ app.get('/api/health', async (c) => {
     openCodeStatus = 'unreachable';
   }
 
+  const updateStatus = getUpdateStatus();
+
   return c.json({
     status: 'ok',
     name: 'Launchboard API',
@@ -34,8 +39,17 @@ app.get('/api/health', async (c) => {
       url: OPENCODE_API,
       status: openCodeStatus,
     },
+    updater: {
+      mode: updateStatus.mode,
+      lastCheck: updateStatus.lastCheck
+        ? new Date(updateStatus.lastCheck).toISOString()
+        : null,
+    },
   });
 });
+
+// Run startup update check (non-blocking)
+startupUpdateCheck();
 
 export default {
   port: 3030,
