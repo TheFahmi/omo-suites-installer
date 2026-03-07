@@ -2,6 +2,27 @@
 
 ## For Humans
 
+### Option 1: Install via npm (Recommended)
+
+```bash
+npm install -g omo-suites
+```
+
+This gives you the `omocs` CLI command globally. Requires Node.js >= 18.
+
+Then run the setup wizard:
+```bash
+omocs init
+```
+
+### Option 2: Install via Bun
+
+```bash
+bun add -g omo-suites
+```
+
+### Option 3: Install from source
+
 Paste this into your LLM agent session:
 
 ```
@@ -23,7 +44,7 @@ cd ~/.omocs && bun install && bun run build
 omocs init
 ```
 
-> **Note**: Requires [Bun](https://bun.sh) runtime. The installer handles that if you don't have it.
+> **Note**: Source install requires [Bun](https://bun.sh) runtime. The installer handles that if you don't have it.
 >
 > **New in v1.5.0**: `omocs init` is now the recommended setup method. It auto-installs oh-my-opencode, registers plugins to `opencode.json`, and optionally sets up Launchboard — all in one command.
 

@@ -11,12 +11,22 @@ import { registerMcpCommand } from './commands/mcp.ts';
 import { registerStatsCommand } from './commands/stats.ts';
 import { registerLaunchboardCommand } from './commands/launchboard.ts';
 
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
-const __pkgDir = dirname(dirname(fileURLToPath(import.meta.url)));
-const pkg = JSON.parse(readFileSync(resolve(__pkgDir, 'package.json'), 'utf-8'));
+// Walk up directories to find package.json (works in dev, built, and npm-installed contexts)
+function findPackageJson(): string {
+  let dir = dirname(fileURLToPath(import.meta.url));
+  for (let i = 0; i < 5; i++) {
+    const candidate = resolve(dir, 'package.json');
+    if (existsSync(candidate)) return candidate;
+    dir = dirname(dir);
+  }
+  return resolve(dirname(dirname(fileURLToPath(import.meta.url))), 'package.json');
+}
+
+const pkg = JSON.parse(readFileSync(findPackageJson(), 'utf-8'));
 const VERSION = pkg.version;
 
 export const program = new Command();

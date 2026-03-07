@@ -13,6 +13,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `omocs init` optionally sets up Launchboard (Kanban board)
 - One command setup: OpenCode → oh-my-opencode → OMO Suites → Launchboard
 - Helper functions: `findOpencodeConfig()`, `checkOhMyOpenCode()` in opencode.ts
+- **Published to npm as `omo-suites`** — install via `npm install -g omo-suites`
+- Node.js compatibility — CLI compiled to JS, works without Bun
+- `build:all` and `prepublishOnly` scripts for npm publishing
+- `engines` field requiring Node.js >= 18
 
 ## [1.4.0] - 2026-03-07
 

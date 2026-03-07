@@ -1,5 +1,5 @@
 {
-  "name": "omocs",
+  "name": "omo-suites",
   "version": "1.5.0",
   "description": "OMO Suites — OpenCode plugin + CLI toolkit. Multi-model orchestration, profiles, agent routing, MCP/LSP management.",
   "type": "module",
@@ -10,17 +10,30 @@
     }
   },
   "bin": {
-    "omocs": "./bin/omocs.ts"
+    "omocs": "dist/cli/omocs.js"
   },
-  "workspaces": ["packages/*"],
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "docs/",
+    "agents/",
+    "install.sh"
+  ],
   "scripts": {
     "start": "bun run bin/omocs.ts",
     "dev": "bun run --watch bin/omocs.ts",
     "build": "bun build src/plugin.ts --outdir dist --target bun --format esm",
-    "build:cli": "bun build bin/omocs.ts --outdir dist/cli --target bun",
+    "build:cli": "bun build bin/omocs.ts --outdir dist/cli --target node --format esm && sed -i '1s|#!/usr/bin/env bun|#!/usr/bin/env node|' dist/cli/omocs.js",
+    "build:all": "npm run build && npm run build:cli",
+    "prepublishOnly": "npm run build:all",
     "launchboard": "cd packages/launchboard && bun run start",
     "launchboard:dev": "cd packages/launchboard && bun run dev",
     "launchboard:setup": "cd packages/launchboard && bash setup.sh"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "dependencies": {
     "@opencode-ai/plugin": "^1.2.20",
@@ -40,7 +53,19 @@
   "author": "TheFahmi",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TheFahmi/omocs.git"
+    "url": "git+https://github.com/TheFahmi/omocs.git"
   },
-  "keywords": ["opencode", "cli", "developer-tools", "ai", "coding-assistant", "plugin", "profiles", "mcp", "lsp", "agent-routing"]
+  "keywords": [
+    "opencode",
+    "cli",
+    "developer-tools",
+    "ai",
+    "coding-assistant",
+    "plugin",
+    "profiles",
+    "mcp",
+    "lsp",
+    "agent-routing",
+    "omo-suites"
+  ]
 }

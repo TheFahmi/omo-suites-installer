@@ -15,6 +15,13 @@ Multi-model orchestration, smart agent routing, profile switching, MCP/LSP manag
 
 ## Installation
 
+### Quick Install (npm)
+
+```bash
+npm install -g omo-suites
+omocs init
+```
+
 ### For Humans
 
 Copy and paste this prompt to your LLM agent (Claude Code, OpenCode, Cursor, AmpCode, etc.):
@@ -30,7 +37,7 @@ https://raw.githubusercontent.com/TheFahmi/omo-suites-installer/main/docs/instal
 curl -s https://raw.githubusercontent.com/TheFahmi/omo-suites-installer/main/docs/installation.md
 ```
 
-### Manual
+### Manual (from source)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/TheFahmi/omocs/main/install.sh | bash
@@ -82,7 +89,7 @@ Backend: http://localhost:3030 | Frontend: http://localhost:3040
 
 ## Requirements
 
-- [Bun](https://bun.sh) runtime
+- Node.js >= 18 (for npm install) or [Bun](https://bun.sh) (for source install)
 - [OpenCode](https://github.com/opencode-ai/opencode)
 - At least one AI provider API key
 
