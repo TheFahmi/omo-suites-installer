@@ -42,7 +42,10 @@ export interface ProfileConfig {
 // ─── Config Locations ────────────────────────────────────────────────
 function getConfigPaths(): string[] {
   return [
+    join(process.cwd(), 'opencode.json'),
     join(process.cwd(), '.opencode.json'),
+    join(process.cwd(), '.opencode', 'opencode.json'),
+    join(homedir(), '.config', 'opencode', 'opencode.json'),
     join(homedir(), '.opencode.json'),
     join(homedir(), '.config', 'opencode', 'config.json'),
   ];

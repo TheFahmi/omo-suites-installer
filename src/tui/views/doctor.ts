@@ -3,6 +3,8 @@ import { readConfig, configExists, getConfigPath } from '../../core/config.ts';
 import { detectOpenCode, readOpenCodeConfig } from '../../core/opencode.ts';
 import { lspServers } from '../../data/lsp-registry.ts';
 import { gold, goldBold, dim, bold, white, green, red, yellow, gray } from '../utils.ts';
+import { existsSync } from 'fs';
+import { join } from 'path';
 
 export interface DoctorViewState {
   results: DoctorResult[];
@@ -109,13 +111,29 @@ export async function runDoctorChecks(state: DoctorViewState, onProgress: () => 
       : 'No API keys in environment',
   });
 
-  // 7. .opencode.json
-  state.currentCheck = '.opencode.json'; onProgress();
+  // 7. opencode.json
+  state.currentCheck = 'opencode.json'; onProgress();
   const ocConfig = await readOpenCodeConfig();
   addResult({
-    name: '.opencode.json',
+    name: 'opencode.json',
     status: ocConfig ? 'pass' : 'warn',
     message: ocConfig ? `Found at ${ocConfig.path}` : 'Not found',
+  });
+
+  // 7b. oh-my-opencode.json
+  state.currentCheck = 'oh-my-opencode.json'; onProgress();
+  const omoConfigPaths = [
+    join(process.cwd(), 'oh-my-opencode.json'),
+    join(process.cwd(), '.opencode', 'oh-my-opencode.json'),
+  ];
+  let omoConfigPath: string | null = null;
+  for (const p of omoConfigPaths) {
+    if (existsSync(p)) { omoConfigPath = p; break; }
+  }
+  addResult({
+    name: 'oh-my-opencode.json',
+    status: omoConfigPath ? 'pass' : 'warn',
+    message: omoConfigPath ? `Found at ${omoConfigPath}` : 'Not found (optional)',
   });
 
   // 8. LSP servers

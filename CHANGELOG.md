@@ -5,6 +5,12 @@ All notable changes to OMO Suites will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.6] - 2026-03-07
+
+### Fixed
+- Config detection now checks `opencode.json`, `.opencode/opencode.json`, and `~/.config/opencode/opencode.json` (was only checking `.opencode.json`)
+- Doctor now also checks for `oh-my-opencode.json`
+
 ## [1.7.5] - 2026-03-07
 
 ### Added
