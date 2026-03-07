@@ -123,10 +123,13 @@ omocs init
 - ✅ Registers both `oh-my-opencode` and `omocs` as plugins in `opencode.json`
 - ✅ Optionally sets up Launchboard (AI Kanban board)
 - ✅ Sets master password for API key encryption
-- ✅ Configures API providers and keys
+- ✅ **Auth plugins** — authenticate via OAuth login (Antigravity, OpenAI Codex) instead of pasting API keys
+- ✅ Configures manual API providers and keys (for providers not covered by auth plugins)
 - ✅ Selects and applies a profile
 - ✅ Detects project stack and suggests LSP servers
 - ✅ Configures MCP tools
+
+> **New in v1.6.0**: Step 6 now offers **auth plugin** login (recommended) before manual API keys. Auth plugins like `opencode-antigravity-auth` and `opencode-openai-codex-auth` let you authenticate via OAuth/CLI login instead of pasting raw API keys. Manual keys still work as a fallback.
 
 The wizard is interactive and guides you through each step. **This is the recommended setup method** — no need to manually edit `opencode.json` or install oh-my-opencode separately.
 

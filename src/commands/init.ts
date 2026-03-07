@@ -15,6 +15,11 @@ import { detectStack, suggestLSPs } from '../utils/detect.ts';
 import { lspServers } from '../data/lsp-registry.ts';
 import { mcpServers } from '../data/mcp-registry.ts';
 
+const AUTH_PLUGINS = [
+  { name: 'Antigravity (Google DeepMind)', value: 'opencode-antigravity-auth', package: 'opencode-antigravity-auth@1.4.6', description: 'OAuth login for Google DeepMind models' },
+  { name: 'OpenAI Codex', value: 'opencode-openai-codex-auth', package: 'opencode-openai-codex-auth@latest', description: 'OAuth login for OpenAI Codex CLI' },
+];
+
 const PROVIDERS = [
   { name: 'Anthropic (Claude)', value: 'anthropic', envKey: 'ANTHROPIC_API_KEY' },
   { name: 'OpenAI (GPT)', value: 'openai', envKey: 'OPENAI_API_KEY' },
@@ -217,53 +222,122 @@ export function registerInitCommand(program: Command): void {
         // ═══════════════════════════════════════════════════════════
         heading('Step 6: API Providers');
 
-        const { selectedProviders } = await inquirer.prompt([{
+        // --- 6a: Auth Plugins (recommended) ---
+        const installedAuthPlugins: string[] = [];
+
+        const { selectedAuthPlugins } = await inquirer.prompt([{
           type: 'checkbox',
-          name: 'selectedProviders',
-          message: 'Which providers do you use?',
-          choices: PROVIDERS.map(p => ({ name: p.name, value: p.value })),
+          name: 'selectedAuthPlugins',
+          message: 'Authenticate via login plugins (recommended):',
+          choices: AUTH_PLUGINS.map(p => ({
+            name: `${p.name} — ${p.description}`,
+            value: p.value,
+          })),
         }]);
 
-        // Collect API keys
-        const accounts: Record<string, Array<{ label: string; key: string; priority: number; status: 'active' | 'rate-limited' | 'disabled' }>> = {};
-
-        for (const providerKey of selectedProviders) {
-          const provider = PROVIDERS.find(p => p.value === providerKey)!;
-
-          // Check environment variable first
-          const envValue = process.env[provider.envKey];
-          let apiKey = '';
-
-          if (envValue) {
-            const { useEnv } = await inquirer.prompt([{
-              type: 'confirm',
-              name: 'useEnv',
-              message: `Found ${provider.envKey} in environment. Use it?`,
-              default: true,
-            }]);
-            if (useEnv) {
-              apiKey = envValue;
+        if (selectedAuthPlugins.length > 0) {
+          // Install each selected auth plugin
+          for (const pluginValue of selectedAuthPlugins) {
+            const plugin = AUTH_PLUGINS.find(p => p.value === pluginValue)!;
+            const authSpinner = ora(`Installing ${plugin.package}...`).start();
+            try {
+              execSync(`npm install -g ${plugin.package} 2>/dev/null`, { stdio: 'pipe' });
+              authSpinner.succeed(`${plugin.package} installed`);
+              installedAuthPlugins.push(plugin.value);
+            } catch {
+              authSpinner.warn(`Failed to install ${plugin.package} — you can install it manually later`);
             }
           }
 
-          if (!apiKey) {
-            const { key } = await inquirer.prompt([{
-              type: 'password',
-              name: 'key',
-              message: `Enter API key for ${provider.name}:`,
-              mask: '*',
-              validate: (input: string) => input.length > 0 ? true : 'API key cannot be empty',
-            }]);
-            apiKey = key;
+          // Register auth plugins in opencode.json
+          try {
+            const opencodeConfigPath = findOpencodeConfig();
+            let opencodeConfig: Record<string, any> = {};
+            if (existsSync(opencodeConfigPath)) {
+              opencodeConfig = JSON.parse(readFileSync(opencodeConfigPath, 'utf-8'));
+            }
+            if (!opencodeConfig.plugin) opencodeConfig.plugin = [];
+            for (const pluginName of installedAuthPlugins) {
+              if (!opencodeConfig.plugin.includes(pluginName)) {
+                opencodeConfig.plugin.push(pluginName);
+              }
+            }
+            const configDir = dirname(opencodeConfigPath);
+            if (!existsSync(configDir)) {
+              mkdirSync(configDir, { recursive: true });
+            }
+            writeFileSync(opencodeConfigPath, JSON.stringify(opencodeConfig, null, 2));
+            success('Registered auth plugins in opencode.json');
+          } catch {
+            info('Could not auto-register auth plugins in opencode.json. Add manually.');
           }
+        }
 
-          const encryptedKey = encrypt(apiKey, masterPassword);
-          accounts[providerKey] = [{
-            label: 'default',
-            key: encryptedKey,
-            priority: 1,
-            status: 'active',
-          }];
+        // --- 6b: Manual API Keys ---
+        let selectedProviders: string[] = [];
+        const accounts: Record<string, Array<{ label: string; key: string; priority: number; status: 'active' | 'rate-limited' | 'disabled' }>> = {};
+
+        const manualKeyMessage = selectedAuthPlugins.length > 0
+          ? 'Also add manual API keys for other providers?'
+          : 'Which providers do you use?';
+
+        const { wantManualKeys } = selectedAuthPlugins.length > 0
+          ? await inquirer.prompt([{
+              type: 'confirm',
+              name: 'wantManualKeys',
+              message: 'Also configure manual API keys for other providers?',
+              default: false,
+            }])
+          : { wantManualKeys: true };
+
+        if (wantManualKeys) {
+          const providerAnswer = await inquirer.prompt([{
+            type: 'checkbox',
+            name: 'selectedProviders',
+            message: manualKeyMessage,
+            choices: PROVIDERS.map(p => ({ name: p.name, value: p.value })),
+          }]);
+          selectedProviders = providerAnswer.selectedProviders;
+
+          // Collect API keys
+          for (const providerKey of selectedProviders) {
+            const provider = PROVIDERS.find(p => p.value === providerKey)!;
+
+            // Check environment variable first
+            const envValue = process.env[provider.envKey];
+            let apiKey = '';
+
+            if (envValue) {
+              const { useEnv } = await inquirer.prompt([{
+                type: 'confirm',
+                name: 'useEnv',
+                message: `Found ${provider.envKey} in environment. Use it?`,
+                default: true,
+              }]);
+              if (useEnv) {
+                apiKey = envValue;
+              }
+            }
+
+            if (!apiKey) {
+              const { key } = await inquirer.prompt([{
+                type: 'password',
+                name: 'key',
+                message: `Enter API key for ${provider.name}:`,
+                mask: '*',
+                validate: (input: string) => input.length > 0 ? true : 'API key cannot be empty',
+              }]);
+              apiKey = key;
+            }
+
+            const encryptedKey = encrypt(apiKey, masterPassword);
+            accounts[providerKey] = [{
+              label: 'default',
+              key: encryptedKey,
+              priority: 1,
+              status: 'active',
+            }];
+          }
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -364,11 +438,16 @@ export function registerInitCommand(program: Command): void {
         const summaryLines = [
           `${icons.check} oh-my-opencode: ${chalk.bold(ohmyInstalled ? 'found' : 'installed')}`,
           `${icons.check} Plugins: oh-my-opencode + omocs registered`,
+          installedAuthPlugins.length > 0
+            ? `${icons.check} Auth plugins: ${chalk.bold(installedAuthPlugins.join(', '))}`
+            : `${icons.cross} Auth plugins: none (skipped)`,
           setupLaunchboard ? `${icons.check} Launchboard: ${chalk.bold('ready')} (omocs lb start)` : `${icons.cross} Launchboard: skipped`,
           `${icons.check} Profile: ${chalk.bold(profile.name)}`,
           `${icons.check} Coder model: ${chalk.bold(profile.agents.coder)}`,
           `${icons.check} Task model: ${chalk.bold(profile.agents.task)}`,
-          `${icons.check} API providers: ${chalk.bold(selectedProviders.length.toString())} configured`,
+          selectedProviders.length > 0
+            ? `${icons.check} API providers: ${chalk.bold(selectedProviders.length.toString())} configured`
+            : `${icons.cross} API providers: none (using auth plugins)`,
           `${icons.check} MCP tools: ${chalk.bold(installMcps.length.toString())} selected`,
           '',
           `${chalk.gray('Config:')} ~/.omocs/config.json`,
