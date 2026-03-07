@@ -69,7 +69,7 @@ export function renderScreen(ctx: RenderContext): void {
 }
 
 function renderFull(ctx: RenderContext, cols: number, rows: number, output: string[]): void {
-  const menuWidth = 14;
+  const menuWidth = 18;
   const contentWidth = cols - menuWidth - 3; // 3 for borders
   const totalWidth = cols;
   // Reserve: header (2) + command bar (2: divider + input) + bottom border (1)
