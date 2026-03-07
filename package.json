@@ -1,6 +1,6 @@
 {
   "name": "omo-suites",
-  "version": "1.7.4",
+  "version": "1.7.5",
   "description": "OMO Suites — OpenCode plugin + CLI toolkit. Multi-model orchestration, profiles, agent routing, MCP/LSP management.",
   "type": "module",
   "main": "dist/plugin.js",
@@ -10,7 +10,8 @@
     }
   },
   "bin": {
-    "omocs": "dist/cli/omocs.js"
+    "omocs": "dist/cli/omocs.js",
+    "omo": "dist/cli/omocs.js"
   },
   "files": [
     "dist/",
