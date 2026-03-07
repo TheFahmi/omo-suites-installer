@@ -148,22 +148,38 @@ async function runChecks(): Promise<CheckResult[]> {
     });
   }
 
-  // 7. Check .opencode.json
+  // 7. Check opencode.json
   spinner.text = 'Checking OpenCode config...';
   const ocConfig = await readOpenCodeConfig();
   if (ocConfig) {
     results.push({
-      name: '.opencode.json',
+      name: 'opencode.json',
       status: 'pass',
       message: `Found at ${ocConfig.path}`,
     });
   } else {
     results.push({
-      name: '.opencode.json',
+      name: 'opencode.json',
       status: 'warn',
       message: 'Not found in current dir or home — run `omocs init`',
     });
   }
+
+  // 7b. Check oh-my-opencode.json
+  spinner.text = 'Checking oh-my-opencode config...';
+  const omoConfigPaths = [
+    join(process.cwd(), 'oh-my-opencode.json'),
+    join(process.cwd(), '.opencode', 'oh-my-opencode.json'),
+  ];
+  let omoConfigPath: string | null = null;
+  for (const p of omoConfigPaths) {
+    if (existsSync(p)) { omoConfigPath = p; break; }
+  }
+  results.push({
+    name: 'oh-my-opencode.json',
+    status: omoConfigPath ? 'pass' : 'warn',
+    message: omoConfigPath ? `Found at ${omoConfigPath}` : 'Not found (optional)',
+  });
 
   // 8. Check LSP servers
   spinner.text = 'Checking LSP servers...';
