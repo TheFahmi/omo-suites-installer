@@ -1,6 +1,6 @@
 {
   "name": "omo-suites",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "OMO Suites — OpenCode plugin + CLI toolkit. Multi-model orchestration, profiles, agent routing, MCP/LSP management.",
   "type": "module",
   "main": "dist/plugin.js",
@@ -53,7 +53,7 @@
   "author": "TheFahmi",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/TheFahmi/omocs.git"
+    "url": "git+https://github.com/TheFahmi/omo-suites-installer.git"
   },
   "keywords": [
     "opencode",

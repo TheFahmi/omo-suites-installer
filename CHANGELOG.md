@@ -5,6 +5,11 @@ All notable changes to OMO Suites will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1] - 2026-03-07
+
+### Fixed
+- Repository URL in package.json (corrected to `omo-suites-installer`)
+
 ## [1.5.0] - 2026-03-07
 
 ### Added
