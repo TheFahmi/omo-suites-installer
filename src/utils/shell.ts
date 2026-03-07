@@ -57,7 +57,8 @@ export async function run(command: string, args: string[] = [], options?: { cwd?
 }
 
 export async function commandExists(command: string): Promise<boolean> {
-  const result = await run('which', [command]);
+  const isWindows = process.platform === 'win32';
+  const result = await run(isWindows ? 'where' : 'which', [command]);
   return result.success;
 }
 
