@@ -1,9 +1,28 @@
 import chalk from 'chalk';
 import boxen from 'boxen';
 import Table from 'cli-table3';
+import { readFileSync, existsSync } from 'fs';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
+// Find package.json version
+function getVersion(): string {
+  try {
+    let dir = dirname(fileURLToPath(import.meta.url));
+    for (let i = 0; i < 5; i++) {
+      const candidate = resolve(dir, 'package.json');
+      if (existsSync(candidate)) {
+        return JSON.parse(readFileSync(candidate, 'utf-8')).version || '?';
+      }
+      dir = dirname(dir);
+    }
+  } catch {}
+  return '?';
+}
 
 // ─── Banner ──────────────────────────────────────────────────────────
 export function showBanner(): void {
+  const version = getVersion();
   const banner = chalk.bold.cyan(`
    ██████╗ ███╗   ███╗ ██████╗  ██████╗███████╗
   ██╔═══██╗████╗ ████║██╔═══██╗██╔════╝██╔════╝
@@ -13,7 +32,7 @@ export function showBanner(): void {
    ╚═════╝ ╚═╝     ╚═╝ ╚═════╝  ╚═════╝╚══════╝
   `);
   console.log(banner);
-  console.log(chalk.gray('  OMOC Suites — CLI toolkit for OpenCode power users\n'));
+  console.log(chalk.gray(`  OMO Suites v${version} — CLI toolkit for OpenCode power users\n`));
 }
 
 // ─── Box Messages ────────────────────────────────────────────────────
