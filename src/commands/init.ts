@@ -8,26 +8,11 @@ import { resolve, dirname } from 'path';
 import { homedir } from 'os';
 import { showBanner, successBox, infoBox, heading, success, info, bullet, icons, handleError } from '../utils/ui.ts';
 import { readConfig, writeConfig, ensureConfigDir, configExists } from '../core/config.ts';
-import { hashPassword, encrypt } from '../core/crypto.ts';
 import { detectOpenCode, writeOpenCodeConfig, mergeProfile, findOpencodeConfig, checkOhMyOpenCode } from '../core/opencode.ts';
 import { profiles, getProfile } from '../data/profiles.ts';
 import { detectStack, suggestLSPs } from '../utils/detect.ts';
 import { lspServers } from '../data/lsp-registry.ts';
 import { mcpServers } from '../data/mcp-registry.ts';
-
-const AUTH_PLUGINS = [
-  { name: 'Antigravity (Google DeepMind)', value: 'opencode-antigravity-auth', package: 'opencode-antigravity-auth@1.4.6', description: 'OAuth login for Google DeepMind models' },
-  { name: 'OpenAI Codex', value: 'opencode-openai-codex-auth', package: 'opencode-openai-codex-auth@latest', description: 'OAuth login for OpenAI Codex CLI' },
-];
-
-const PROVIDERS = [
-  { name: 'Anthropic (Claude)', value: 'anthropic', envKey: 'ANTHROPIC_API_KEY' },
-  { name: 'OpenAI (GPT)', value: 'openai', envKey: 'OPENAI_API_KEY' },
-  { name: 'Google (Gemini)', value: 'google', envKey: 'GOOGLE_API_KEY' },
-  { name: 'GitHub Copilot', value: 'github', envKey: 'GITHUB_TOKEN' },
-  { name: 'Groq', value: 'groq', envKey: 'GROQ_API_KEY' },
-  { name: 'OpenRouter', value: 'openrouter', envKey: 'OPENROUTER_API_KEY' },
-];
 
 export function registerInitCommand(program: Command): void {
   program
@@ -196,60 +181,92 @@ export function registerInitCommand(program: Command): void {
         }
 
         // ═══════════════════════════════════════════════════════════
-        // Step 5: Master Password
+        // Step 5: Provider Authentication
         // ═══════════════════════════════════════════════════════════
-        heading('Step 5: Master Password');
-        info('Your API keys will be encrypted with a master password.');
+        heading('Step 5: Provider Authentication');
+        info('Configure your subscriptions for oh-my-opencode.');
 
-        const { masterPassword } = await inquirer.prompt([{
-          type: 'password',
-          name: 'masterPassword',
-          message: 'Set a master password:',
-          mask: '*',
-          validate: (input: string) => input.length >= 4 ? true : 'Password must be at least 4 characters',
+        // Ask subscription questions
+        const { hasClaude } = await inquirer.prompt([{
+          type: 'confirm',
+          name: 'hasClaude',
+          message: 'Do you have a Claude Pro/Max subscription?',
+          default: false,
         }]);
 
-        const { confirmPassword } = await inquirer.prompt([{
-          type: 'password',
-          name: 'confirmPassword',
-          message: 'Confirm master password:',
-          mask: '*',
-          validate: (input: string) => input === masterPassword ? true : 'Passwords do not match',
+        let claudeFlag = 'no';
+        if (hasClaude) {
+          const { isMax20 } = await inquirer.prompt([{
+            type: 'confirm',
+            name: 'isMax20',
+            message: 'Are you on max20 (20x mode)?',
+            default: false,
+          }]);
+          claudeFlag = isMax20 ? 'max20' : 'yes';
+        }
+
+        const { hasOpenAI } = await inquirer.prompt([{
+          type: 'confirm',
+          name: 'hasOpenAI',
+          message: 'Do you have a ChatGPT Plus subscription?',
+          default: false,
         }]);
 
-        // ═══════════════════════════════════════════════════════════
-        // Step 6: API Providers
-        // ═══════════════════════════════════════════════════════════
-        heading('Step 6: API Providers');
-
-        // --- 6a: Auth Plugins (recommended) ---
-        const installedAuthPlugins: string[] = [];
-
-        const { selectedAuthPlugins } = await inquirer.prompt([{
-          type: 'checkbox',
-          name: 'selectedAuthPlugins',
-          message: 'Authenticate via login plugins (recommended):',
-          choices: AUTH_PLUGINS.map(p => ({
-            name: `${p.name} — ${p.description}`,
-            value: p.value,
-          })),
+        const { hasGemini } = await inquirer.prompt([{
+          type: 'confirm',
+          name: 'hasGemini',
+          message: 'Do you want to integrate Gemini models?',
+          default: false,
         }]);
 
-        if (selectedAuthPlugins.length > 0) {
-          // Install each selected auth plugin
-          for (const pluginValue of selectedAuthPlugins) {
-            const plugin = AUTH_PLUGINS.find(p => p.value === pluginValue)!;
-            const authSpinner = ora(`Installing ${plugin.package}...`).start();
-            try {
-              execSync(`npm install -g ${plugin.package} 2>/dev/null`, { stdio: 'pipe' });
-              authSpinner.succeed(`${plugin.package} installed`);
-              installedAuthPlugins.push(plugin.value);
-            } catch {
-              authSpinner.warn(`Failed to install ${plugin.package} — you can install it manually later`);
-            }
+        const { hasCopilot } = await inquirer.prompt([{
+          type: 'confirm',
+          name: 'hasCopilot',
+          message: 'Do you have a GitHub Copilot subscription?',
+          default: false,
+        }]);
+
+        const { hasOpenCodeZen } = await inquirer.prompt([{
+          type: 'confirm',
+          name: 'hasOpenCodeZen',
+          message: 'Do you have access to OpenCode Zen?',
+          default: false,
+        }]);
+
+        const { hasZai } = await inquirer.prompt([{
+          type: 'confirm',
+          name: 'hasZai',
+          message: 'Do you have a Z.ai Coding Plan subscription?',
+          default: false,
+        }]);
+
+        // Build and run oh-my-opencode install command
+        const omoFlags = [
+          `--claude=${claudeFlag}`,
+          `--openai=${hasOpenAI ? 'yes' : 'no'}`,
+          `--gemini=${hasGemini ? 'yes' : 'no'}`,
+          `--copilot=${hasCopilot ? 'yes' : 'no'}`,
+          `--opencode-zen=${hasOpenCodeZen ? 'yes' : 'no'}`,
+          `--zai-coding-plan=${hasZai ? 'yes' : 'no'}`,
+        ].join(' ');
+
+        const omoInstallSpinner = ora('Running oh-my-opencode installer...').start();
+        try {
+          try {
+            execSync(`bunx oh-my-opencode install --no-tui ${omoFlags}`, { stdio: 'pipe', timeout: 120000 });
+          } catch {
+            // Fallback to npx if bunx fails
+            execSync(`npx oh-my-opencode install --no-tui ${omoFlags}`, { stdio: 'pipe', timeout: 120000 });
           }
+          omoInstallSpinner.succeed('oh-my-opencode configured');
+        } catch {
+          omoInstallSpinner.warn('oh-my-opencode installer failed — you can run it manually later');
+        }
 
-          // Register auth plugins in opencode.json
+        // If Gemini selected, add opencode-antigravity-auth plugin
+        const installedAuthPlugins: string[] = [];
+        if (hasGemini) {
+          const geminiSpinner = ora('Installing opencode-antigravity-auth...').start();
           try {
             const opencodeConfigPath = findOpencodeConfig();
             let opencodeConfig: Record<string, any> = {};
@@ -257,93 +274,43 @@ export function registerInitCommand(program: Command): void {
               opencodeConfig = JSON.parse(readFileSync(opencodeConfigPath, 'utf-8'));
             }
             if (!opencodeConfig.plugin) opencodeConfig.plugin = [];
-            for (const pluginName of installedAuthPlugins) {
-              if (!opencodeConfig.plugin.includes(pluginName)) {
-                opencodeConfig.plugin.push(pluginName);
-              }
+            if (!opencodeConfig.plugin.includes('opencode-antigravity-auth@latest')) {
+              opencodeConfig.plugin.push('opencode-antigravity-auth@latest');
             }
             const configDir = dirname(opencodeConfigPath);
             if (!existsSync(configDir)) {
               mkdirSync(configDir, { recursive: true });
             }
             writeFileSync(opencodeConfigPath, JSON.stringify(opencodeConfig, null, 2));
-            success('Registered auth plugins in opencode.json');
+            installedAuthPlugins.push('opencode-antigravity-auth');
+            geminiSpinner.succeed('Auth plugin registered in opencode.json');
           } catch {
-            info('Could not auto-register auth plugins in opencode.json. Add manually.');
+            geminiSpinner.warn('Could not register opencode-antigravity-auth — add manually to opencode.json');
           }
         }
 
-        // --- 6b: Manual API Keys ---
-        let selectedProviders: string[] = [];
-        const accounts: Record<string, Array<{ label: string; key: string; priority: number; status: 'active' | 'rate-limited' | 'disabled' }>> = {};
+        // Collect configured providers for summary
+        const configuredProviders: string[] = [];
+        if (hasClaude) configuredProviders.push(`Claude (${claudeFlag === 'max20' ? 'max20' : 'standard'})`);
+        if (hasOpenAI) configuredProviders.push('ChatGPT Plus');
+        if (hasGemini) configuredProviders.push('Gemini');
+        if (hasCopilot) configuredProviders.push('GitHub Copilot');
+        if (hasOpenCodeZen) configuredProviders.push('OpenCode Zen');
+        if (hasZai) configuredProviders.push('Z.ai Coding Plan');
 
-        const manualKeyMessage = selectedAuthPlugins.length > 0
-          ? 'Also add manual API keys for other providers?'
-          : 'Which providers do you use?';
-
-        const { wantManualKeys } = selectedAuthPlugins.length > 0
-          ? await inquirer.prompt([{
-              type: 'confirm',
-              name: 'wantManualKeys',
-              message: 'Also configure manual API keys for other providers?',
-              default: false,
-            }])
-          : { wantManualKeys: true };
-
-        if (wantManualKeys) {
-          const providerAnswer = await inquirer.prompt([{
-            type: 'checkbox',
-            name: 'selectedProviders',
-            message: manualKeyMessage,
-            choices: PROVIDERS.map(p => ({ name: p.name, value: p.value })),
-          }]);
-          selectedProviders = providerAnswer.selectedProviders;
-
-          // Collect API keys
-          for (const providerKey of selectedProviders) {
-            const provider = PROVIDERS.find(p => p.value === providerKey)!;
-
-            // Check environment variable first
-            const envValue = process.env[provider.envKey];
-            let apiKey = '';
-
-            if (envValue) {
-              const { useEnv } = await inquirer.prompt([{
-                type: 'confirm',
-                name: 'useEnv',
-                message: `Found ${provider.envKey} in environment. Use it?`,
-                default: true,
-              }]);
-              if (useEnv) {
-                apiKey = envValue;
-              }
-            }
-
-            if (!apiKey) {
-              const { key } = await inquirer.prompt([{
-                type: 'password',
-                name: 'key',
-                message: `Enter API key for ${provider.name}:`,
-                mask: '*',
-                validate: (input: string) => input.length > 0 ? true : 'API key cannot be empty',
-              }]);
-              apiKey = key;
-            }
-
-            const encryptedKey = encrypt(apiKey, masterPassword);
-            accounts[providerKey] = [{
-              label: 'default',
-              key: encryptedKey,
-              priority: 1,
-              status: 'active',
-            }];
+        // Show next steps
+        if (configuredProviders.length > 0) {
+          info('');
+          info(chalk.cyan('Next steps: Run `opencode auth login` to authenticate each provider:'));
+          for (const provider of configuredProviders) {
+            info(`  ${icons.check} ${provider}`);
           }
         }
 
         // ═══════════════════════════════════════════════════════════
-        // Step 7: Choose Profile
+        // Step 6: Choose Profile
         // ═══════════════════════════════════════════════════════════
-        heading('Step 7: Choose Profile');
+        heading('Step 6: Choose Profile');
 
         const profileChoices = Object.entries(profiles).map(([key, profile]) => ({
           name: `${profile.name} — ${profile.description}`,
@@ -359,9 +326,9 @@ export function registerInitCommand(program: Command): void {
         }]);
 
         // ═══════════════════════════════════════════════════════════
-        // Step 8: Project Detection
+        // Step 7: Project Detection
         // ═══════════════════════════════════════════════════════════
-        heading('Step 8: Project Detection');
+        heading('Step 7: Project Detection');
 
         const detectSpinner = ora('Detecting project stack...').start();
         const stack = detectStack();
@@ -392,9 +359,9 @@ export function registerInitCommand(program: Command): void {
         }
 
         // ═══════════════════════════════════════════════════════════
-        // Step 9: MCP Tools
+        // Step 8: MCP Tools
         // ═══════════════════════════════════════════════════════════
-        heading('Step 9: MCP Tools');
+        heading('Step 8: MCP Tools');
 
         const { installMcps } = await inquirer.prompt([{
           type: 'checkbox',
@@ -408,9 +375,9 @@ export function registerInitCommand(program: Command): void {
         }]);
 
         // ═══════════════════════════════════════════════════════════
-        // Step 10: Saving Configuration
+        // Step 9: Saving Configuration
         // ═══════════════════════════════════════════════════════════
-        heading('Step 10: Saving Configuration');
+        heading('Step 9: Saving Configuration');
 
         const saveSpinner = ora('Saving configuration...').start();
 
@@ -419,10 +386,8 @@ export function registerInitCommand(program: Command): void {
         const config = await readConfig();
         config.activeProfile = selectedProfile;
         config.activeAgent = 'sisyphus';
-        config.accounts = accounts;
-        config.masterPasswordHash = hashPassword(masterPassword);
         config.preferences = {
-          autoRotate: selectedProviders.length > 1,
+          autoRotate: configuredProviders.length > 1,
         };
         await writeConfig(config);
         saveSpinner.text = 'OMOCS config saved...';
@@ -438,23 +403,25 @@ export function registerInitCommand(program: Command): void {
         const summaryLines = [
           `${icons.check} oh-my-opencode: ${chalk.bold(ohmyInstalled ? 'found' : 'installed')}`,
           `${icons.check} Plugins: oh-my-opencode + omocs registered`,
+          configuredProviders.length > 0
+            ? `${icons.check} Providers: ${chalk.bold(configuredProviders.join(', '))}`
+            : `${icons.cross} Providers: none configured`,
           installedAuthPlugins.length > 0
             ? `${icons.check} Auth plugins: ${chalk.bold(installedAuthPlugins.join(', '))}`
-            : `${icons.cross} Auth plugins: none (skipped)`,
+            : '',
           setupLaunchboard ? `${icons.check} Launchboard: ${chalk.bold('ready')} (omocs lb start)` : `${icons.cross} Launchboard: skipped`,
           `${icons.check} Profile: ${chalk.bold(profile.name)}`,
           `${icons.check} Coder model: ${chalk.bold(profile.agents.coder)}`,
           `${icons.check} Task model: ${chalk.bold(profile.agents.task)}`,
-          selectedProviders.length > 0
-            ? `${icons.check} API providers: ${chalk.bold(selectedProviders.length.toString())} configured`
-            : `${icons.cross} API providers: none (using auth plugins)`,
           `${icons.check} MCP tools: ${chalk.bold(installMcps.length.toString())} selected`,
           '',
           `${chalk.gray('Config:')} ~/.omocs/config.json`,
           `${chalk.gray('OpenCode:')} .opencode.json`,
           '',
-          `Next: Run ${chalk.cyan('omocs doctor')} to verify your setup.`,
-        ];
+          configuredProviders.length > 0
+            ? `Next: Run ${chalk.cyan('opencode auth login')} to authenticate your providers.`
+            : `Next: Run ${chalk.cyan('omocs doctor')} to verify your setup.`,
+        ].filter(Boolean);
 
         successBox('Setup Complete! 🎉', summaryLines.join('\n'));
       } catch (error) {

@@ -5,6 +5,25 @@ All notable changes to OMO Suites will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-03-07
+
+### Changed
+- **Rewrote `omocs init` Step 6 to use oh-my-opencode subscription-based flow** — replaces manual API key entry
+- Provider authentication now asks about subscriptions (Claude Pro/Max, ChatGPT Plus, Gemini, GitHub Copilot, OpenCode Zen, Z.ai Coding Plan)
+- Runs `oh-my-opencode install --no-tui` with appropriate flags based on user answers
+- For Gemini: auto-registers `opencode-antigravity-auth@latest` plugin in opencode.json
+- Claude flag supports `--claude=yes|no|max20` based on max20 mode selection
+
+### Removed
+- **Master Password step** — no longer needed since API keys aren't stored locally
+- **Manual API key collection** — replaced by subscription-based oh-my-opencode installer
+- `PROVIDERS` array and `AUTH_PLUGINS` array from init command
+- `encrypt()` / `hashPassword()` imports from init command
+- `accounts` and `masterPasswordHash` from saved config
+
+### Fixed
+- Steps renumbered: 9 steps total (was 10). Step 5 = Provider Authentication, Step 6 = Profile, Step 7 = Detection, Step 8 = MCP, Step 9 = Save
+
 ## [1.6.0] - 2026-03-07
 
 ### Added
