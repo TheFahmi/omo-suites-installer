@@ -3,11 +3,17 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { resolve } from 'path';
+import { resolveLaunchboardDir } from '../utils/launchboard-resolver.ts';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const LAUNCHBOARD_DIR = resolve(__dirname, '../../packages/launchboard');
+function getLaunchboardDir(): string | null {
+  const result = resolveLaunchboardDir();
+  if (!result.dir) {
+    console.log(chalk.red(`❌ ${result.message || 'Launchboard not found.'}`));
+    return null;
+  }
+  return result.dir;
+}
 
 export function registerLaunchboardCommand(program: Command) {
   const lb = program
@@ -20,10 +26,8 @@ export function registerLaunchboardCommand(program: Command) {
     .action(async () => {
       console.log(chalk.hex('#d4a853').bold('\n🚀 Setting up Launchboard...\n'));
 
-      if (!existsSync(LAUNCHBOARD_DIR)) {
-        console.log(chalk.red('❌ Launchboard package not found at'), LAUNCHBOARD_DIR);
-        return;
-      }
+      const LAUNCHBOARD_DIR = getLaunchboardDir();
+      if (!LAUNCHBOARD_DIR) return;
 
       const spinner = ora('Installing dependencies...').start();
       try {
@@ -81,6 +85,9 @@ export function registerLaunchboardCommand(program: Command) {
     .option('--frontend-only', 'Start only the frontend')
     .action(async (opts) => {
       console.log(chalk.hex('#d4a853').bold('\n🚀 Starting Launchboard...\n'));
+
+      const LAUNCHBOARD_DIR = getLaunchboardDir();
+      if (!LAUNCHBOARD_DIR) return;
 
       if (!existsSync(resolve(LAUNCHBOARD_DIR, 'node_modules'))) {
         console.log(chalk.yellow('⚠️  Dependencies not installed. Run: omocs launchboard setup'));

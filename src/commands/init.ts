@@ -13,6 +13,7 @@ import { profiles, getProfile } from '../data/profiles.ts';
 import { detectStack, suggestLSPs } from '../utils/detect.ts';
 import { lspServers } from '../data/lsp-registry.ts';
 import { mcpServers } from '../data/mcp-registry.ts';
+import { resolveLaunchboardDir } from '../utils/launchboard-resolver.ts';
 
 export function registerInitCommand(program: Command): void {
   program
@@ -127,11 +128,12 @@ export function registerInitCommand(program: Command): void {
         setupLaunchboard = lbPrompt.setupLaunchboard;
 
         if (setupLaunchboard) {
-          // Resolve launchboard dir relative to this file's package root
-          const lbDir = resolve(dirname(new URL(import.meta.url).pathname), '../../packages/launchboard');
+          // Resolve launchboard dir — checks package location, persistent ~/.omocs/launchboard, or auto-clones from GitHub
+          const lbResult = resolveLaunchboardDir();
+          const lbDir = lbResult.dir;
 
-          if (!existsSync(lbDir)) {
-            info('Launchboard package not found. Skipping.');
+          if (!lbDir) {
+            info(lbResult.message || 'Launchboard package not found. Skipping.');
             setupLaunchboard = false;
           } else {
             const lbSpinner = ora('Installing Launchboard dependencies...').start();

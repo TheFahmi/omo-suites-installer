@@ -5,6 +5,16 @@ All notable changes to OMO Suites will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.2] - 2026-03-07
+
+### Fixed
+- **Launchboard auto-downloads from GitHub when not bundled** — npm installs no longer skip Launchboard with "not found"
+- When `packages/launchboard/` is missing (npm install), auto-clones from GitHub to `~/.omocs/launchboard/`
+- Persistent location (`~/.omocs/launchboard/`) survives npm updates — only downloads once
+- Both `omocs init` (Step 4) and `omocs launchboard setup/start` now use shared resolver
+- Cross-platform support: works on Windows, macOS, and Linux
+- Clear error message when git is not installed
+
 ## [1.7.1] - 2026-03-07
 
 ### Fixed
