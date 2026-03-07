@@ -7,10 +7,27 @@ import {
 } from './utils.ts';
 
 const __pkgDir = dirname(dirname(fileURLToPath(import.meta.url)));
-let VERSION = '1.2.0';
+let VERSION = 'unknown';
 try {
-  const pkg = JSON.parse(readFileSync(resolve(__pkgDir, 'package.json'), 'utf-8'));
-  VERSION = pkg.version;
+  // Walk up directories to find package.json (works in dev, built, and npm-installed contexts)
+  let dir = dirname(fileURLToPath(import.meta.url));
+  let found = false;
+  for (let i = 0; i < 5; i++) {
+    const candidate = resolve(dir, 'package.json');
+    try {
+      const pkg = JSON.parse(readFileSync(candidate, 'utf-8'));
+      if (pkg.name === 'omo-suites' || pkg.name === 'omocs') {
+        VERSION = pkg.version;
+        found = true;
+        break;
+      }
+    } catch {}
+    dir = dirname(dir);
+  }
+  if (!found) {
+    const pkg = JSON.parse(readFileSync(resolve(__pkgDir, 'package.json'), 'utf-8'));
+    VERSION = pkg.version;
+  }
 } catch {}
 export { VERSION };
 

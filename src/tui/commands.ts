@@ -6,8 +6,7 @@ import { readConfig, setActiveProfile, configExists } from '../core/config.ts';
 import { addMcpToConfig, detectOpenCode } from '../core/opencode.ts';
 import { commandExists, getCommandVersion } from '../utils/shell.ts';
 import { gold, goldBold, dim, bold, white, green, red, cyan, yellow, gray, modelColor, shortModel } from './utils.ts';
-
-const VERSION = '1.1.0';
+import { VERSION } from './renderer.ts';
 
 // ─── Command List (for autocomplete) ────────────────────────────────
 export const COMMAND_LIST = [
