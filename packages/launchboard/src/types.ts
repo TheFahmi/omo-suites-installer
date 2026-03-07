@@ -1,92 +1,47 @@
-export interface CreateWorkspaceInput {
-  name: string;
-  icon?: string;
-  color?: string;
-  description?: string;
-}
+// OpenCode API Types
 
-export interface UpdateWorkspaceInput {
-  name?: string;
-  icon?: string;
-  color?: string;
-  description?: string;
-}
-
-export interface CreateTaskInput {
-  workspaceId: string;
-  columnId?: string;
+export interface Session {
+  id: string;
+  projectID: string;
+  directory: string;
+  parentID?: string;
+  summary?: {
+    additions: number;
+    deletions: number;
+    files: number;
+    diffs?: FileDiff[];
+  };
   title: string;
-  description?: string;
-  priority?: number;
-  assignee?: string;
-  aiAssisted?: boolean;
-  aiAgent?: string;
-  dueDate?: string;
-  estimateHours?: number;
-  labelIds?: string[];
+  version: string;
+  time: {
+    created: number;
+    updated: number;
+    compacting?: number;
+  };
 }
 
-export interface UpdateTaskInput {
-  title?: string;
-  description?: string;
-  priority?: number;
-  progress?: number;
-  columnId?: string;
-  position?: number;
-  assignee?: string;
-  aiAssisted?: boolean;
-  aiAgent?: string;
-  dueDate?: string;
-  estimateHours?: number;
-  actualHours?: number;
-  labelIds?: string[];
+export interface FileDiff {
+  path: string;
+  additions: number;
+  deletions: number;
+  status: string;
 }
 
-export interface MoveTaskInput {
-  columnId: string;
-  position: number;
-}
-
-export interface CreateColumnInput {
-  workspaceId: string;
-  name: string;
-  icon?: string;
-  position?: number;
-  color?: string;
-  wipLimit?: number;
-}
-
-export interface UpdateColumnInput {
-  name?: string;
-  icon?: string;
-  position?: number;
-  color?: string;
-  wipLimit?: number | null;
-}
-
-export interface ReorderColumnsInput {
-  columns: { id: string; position: number }[];
-}
-
-export interface CreateLabelInput {
-  workspaceId: string;
-  name: string;
-  color: string;
-}
-
-export interface UpdateLabelInput {
-  name?: string;
-  color?: string;
-}
-
-export interface CreateCommentInput {
-  author: string;
+export interface Todo {
+  id: string;
   content: string;
-  isAi?: boolean;
+  status: string; // pending, in_progress, completed, cancelled
+  priority: string; // high, medium, low
 }
 
-export function generateShortId(labelName?: string): string {
-  const hex = crypto.randomUUID().slice(0, 4);
-  const prefix = labelName || 'task';
-  return `${prefix}-${hex}`;
+// Board types for the aggregated view
+export interface BoardColumn {
+  id: string;
+  name: string;
+  todos: BoardTodo[];
+}
+
+export interface BoardTodo extends Todo {
+  sessionId: string;
+  sessionTitle: string;
 }

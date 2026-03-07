@@ -1,69 +1,73 @@
 # Launchboard
 
-> Plan. Build. Launch.
+OpenCode session & todo Kanban board — connects to OpenCode's API to display your sessions and todos in a visual kanban layout.
 
-AI-integrated Kanban board for developers and teams. Built for humans who ship and AI agents who help.
+## Architecture
 
-## Features
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Frontend (Next.js :3040)          Backend (Hono :3030)      │
+│                                                              │
+│  Board Page ──→ /api/board ──→ OpenCode API (:1337)         │
+│  Sessions   ──→ /api/sessions ──→ GET /session              │
+│  Todos      ──→ /api/sessions/:id/todos ──→ GET /session/id/todo │
+└─────────────────────────────────────────────────────────────┘
+```
 
-- **Kanban Board** — Drag-and-drop task management with customizable columns
-- **AI Agent Integration** — Tasks can be created, updated, and moved by AI agents
-- **MCP Server** — Connect to OpenCode and other AI coding tools
-- **Workspaces** — Organize projects with dedicated boards, labels, and rules
-- **Project Rules** — Define guidelines that AI agents follow
-- **Stats & Velocity** — Track team productivity and completion rates
-- **REST API** — Full CRUD API for automation and integrations
-- **Dark Theme** — Beautiful dark UI with gold accents
+No local database. All data comes from OpenCode's running API.
 
 ## Quick Start
 
-```bash
-git clone https://github.com/TheFahmi/launchboard.git
-cd launchboard
-./setup.sh
+1. Start OpenCode (default port 1337):
+   ```bash
+   opencode
+   ```
+
+2. Start the backend:
+   ```bash
+   cd packages/launchboard
+   bun run dev
+   ```
+
+3. Start the frontend:
+   ```bash
+   cd packages/launchboard/frontend
+   bun install
+   bun run dev
+   ```
+
+4. Open http://localhost:3040
+
+## Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OPENCODE_API_URL` | `http://localhost:1337` | OpenCode API endpoint |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:3030` | Launchboard backend URL |
+
+## API Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/health` | Health check + OpenCode connectivity |
+| `GET /api/sessions` | List all OpenCode sessions |
+| `GET /api/sessions/:id` | Get single session |
+| `GET /api/sessions/:id/todos` | Get todos for a session |
+| `GET /api/board` | Aggregated kanban board (all sessions' todos) |
+| `GET /api/board?session=<id>` | Filtered board for one session |
+
+## Board Layout
+
+```
+┌─ Pending ─────┐ ┌─ In Progress ──┐ ┌─ Completed ────┐ ┌─ Cancelled ────┐
+│ [Fix auth bug] │ │ [Add logging]  │ │ [Setup CI/CD]  │ │                │
+│ Session: main  │ │ Session: feat-x│ │ Session: main  │ │                │
+│ Priority: high │ │ Priority: med  │ │ Priority: low  │ │                │
+└────────────────┘ └────────────────┘ └────────────────┘ └────────────────┘
 ```
 
-Backend runs on `http://localhost:3030`, frontend on `http://localhost:3040`.
-
-## Tech Stack
-
-- **Backend:** Bun + Hono + Drizzle ORM + SQLite
-- **Frontend:** Next.js 16 + Tailwind CSS + @dnd-kit
-- **MCP:** Model Context Protocol for AI tool integration
-- **Icons:** Lucide React
-
-## MCP Integration
-
-Add Launchboard to your OpenCode config:
-
-```json
-{
-  "mcp": {
-    "launchboard": {
-      "command": "bun",
-      "args": ["run", "/path/to/launchboard/src/mcp/server.ts"],
-      "env": {
-        "LAUNCHBOARD_API_URL": "http://localhost:3030"
-      }
-    }
-  }
-}
-```
-
-## API
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/workspaces` | GET/POST | List/create workspaces |
-| `/api/tasks` | GET/POST | List/create tasks |
-| `/api/tasks/:id` | GET/PATCH/DELETE | Get/update/delete task |
-| `/api/tasks/:id/move` | POST | Move task between columns |
-| `/api/tasks/:id/comments` | GET/POST | Task comments |
-| `/api/columns` | GET/POST | List/create columns |
-| `/api/labels` | GET/POST | List/create labels |
-| `/api/rules` | GET/POST | List/create project rules |
-| `/api/stats/:workspaceId` | GET | Workspace statistics |
-
-## License
-
-MIT
+- **Columns:** Based on todo status (pending, in_progress, completed, cancelled)
+- **Cards:** Show content, priority badge, parent session name
+- **Sidebar:** List of sessions with todo counts, clickable to filter
+- **Auto-refresh:** Every 30 seconds
+- **Graceful fallback:** Shows "No OpenCode instance detected" when API is unreachable

@@ -1,118 +1,152 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { Kanban } from '@/components/board/kanban';
-import { Modal } from '@/components/ui/modal';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { api } from '@/lib/api';
-import type { Workspace, Column, Task, Label } from '@/lib/types';
+import { WifiOff, Zap } from 'lucide-react';
+import type { BoardData, BoardColumn, SessionSummary } from '@/lib/types';
+
+const REFRESH_INTERVAL = 30_000; // 30 seconds
 
 export default function BoardPage() {
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>('');
-  const [columns, setColumns] = useState<Column[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [labels, setLabels] = useState<Label[]>([]);
+  const [columns, setColumns] = useState<BoardColumn[]>([]);
+  const [sessions, setSessions] = useState<SessionSummary[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [connected, setConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // New Task modal state
-  const [showNewTask, setShowNewTask] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskPriority, setNewTaskPriority] = useState(3);
-  const [newTaskColumnId, setNewTaskColumnId] = useState('');
-  const [creating, setCreating] = useState(false);
-
-  // Load workspaces
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const ws = await api.get<Workspace[]>('/api/workspaces');
-        setWorkspaces(ws);
-        if (ws.length > 0) {
-          setActiveWorkspaceId(ws[0].id);
-        }
-      } catch (err) {
-        console.error('Failed to load workspaces:', err);
-      }
-    };
-    load();
-  }, []);
-
-  // Load workspace data when active workspace changes
-  const loadWorkspaceData = useCallback(async () => {
-    if (!activeWorkspaceId) return;
-    setLoading(true);
+  const loadBoard = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
-      const [cols, allTasks, lbls] = await Promise.all([
-        api.get<Column[]>(`/api/columns?workspace=${activeWorkspaceId}`),
-        api.get<Task[]>(`/api/tasks?workspace=${activeWorkspaceId}`),
-        api.get<Label[]>(`/api/labels?workspace=${activeWorkspaceId}`),
-      ]);
-      setColumns(cols);
-      setTasks(allTasks);
-      setLabels(lbls);
-      if (cols.length > 0 && !newTaskColumnId) {
-        setNewTaskColumnId(cols[0].id);
-      }
+      const queryParam = activeSessionId ? `?session=${activeSessionId}` : '';
+      const data = await api.get<BoardData>(`/api/board${queryParam}`);
+      setColumns(data.columns);
+      setSessions(data.sessions);
+      setConnected(true);
+      setError(null);
+      setLastRefresh(new Date());
     } catch (err) {
-      console.error('Failed to load workspace data:', err);
+      setError(String(err));
+      setConnected(false);
     } finally {
       setLoading(false);
     }
-  }, [activeWorkspaceId]);
+  }, [activeSessionId]);
 
+  // Initial load + reload when session filter changes
   useEffect(() => {
-    loadWorkspaceData();
-  }, [loadWorkspaceData]);
+    loadBoard(true);
+  }, [loadBoard]);
 
-  // Create task
-  const handleCreateTask = async () => {
-    if (!newTaskTitle.trim()) return;
-    setCreating(true);
-    try {
-      const task = await api.post<Task>('/api/tasks', {
-        workspaceId: activeWorkspaceId,
-        title: newTaskTitle,
-        priority: newTaskPriority,
-        columnId: newTaskColumnId || undefined,
-      });
-      setTasks((prev) => [...prev, { ...task, labels: [] }]);
-      setNewTaskTitle('');
-      setNewTaskPriority(3);
-      setShowNewTask(false);
-      // Refresh workspace counts
-      const ws = await api.get<Workspace[]>('/api/workspaces');
-      setWorkspaces(ws);
-    } catch (err) {
-      console.error('Failed to create task:', err);
-    } finally {
-      setCreating(false);
-    }
-  };
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    refreshTimerRef.current = setInterval(() => {
+      loadBoard(false);
+    }, REFRESH_INTERVAL);
+
+    return () => {
+      if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
+    };
+  }, [loadBoard]);
 
   // Search filter
-  const filteredTasks = searchQuery
-    ? tasks.filter((t) =>
-        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.shortId.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : tasks;
+  const filteredColumns = searchQuery
+    ? columns.map((col) => ({
+        ...col,
+        todos: col.todos.filter(
+          (t) =>
+            t.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            t.sessionTitle.toLowerCase().includes(searchQuery.toLowerCase())
+        ),
+      }))
+    : columns;
 
-  const activeWs = workspaces.find((ws) => ws.id === activeWorkspaceId);
+  const totalTodos = filteredColumns.reduce((sum, col) => sum + col.todos.length, 0);
 
-  if (loading && workspaces.length === 0) {
+  const headerTitle = activeSessionId
+    ? sessions.find((s) => s.id === activeSessionId)?.title || 'Session'
+    : 'All Sessions';
+
+  // Error/disconnected state
+  if (!loading && !connected) {
+    return (
+      <div className="flex h-screen" style={{ background: 'var(--bg-primary)' }}>
+        <Sidebar
+          sessions={[]}
+          activeSessionId={null}
+          onSessionChange={setActiveSessionId}
+          connected={false}
+        />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center max-w-md px-6">
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+            >
+              <WifiOff size={28} style={{ color: 'var(--p1)' }} />
+            </div>
+            <h2
+              className="text-lg font-bold mb-2"
+              style={{ fontFamily: 'var(--font-heading), sans-serif' }}
+            >
+              No OpenCode Instance Detected
+            </h2>
+            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+              Launchboard connects to OpenCode&apos;s API to display your sessions and todos.
+              Make sure OpenCode is running.
+            </p>
+            <div
+              className="rounded-lg p-4 text-left text-sm"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+            >
+              <p className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
+                Quick start:
+              </p>
+              <code
+                className="block px-3 py-2 rounded text-xs"
+                style={{ background: 'var(--bg-primary)', color: 'var(--gold)' }}
+              >
+                opencode
+              </code>
+              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                Default API: http://localhost:1337
+              </p>
+            </div>
+            <button
+              onClick={() => loadBoard(true)}
+              className="mt-4 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors"
+              style={{
+                background: 'var(--gold)',
+                color: '#0a0a0a',
+              }}
+            >
+              Retry Connection
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading state
+  if (loading && columns.length === 0) {
     return (
       <div className="flex items-center justify-center h-screen" style={{ background: 'var(--bg-primary)' }}>
         <div className="text-center">
-          <div
-            className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin mx-auto mb-3"
-            style={{ borderColor: 'var(--gold)', borderTopColor: 'transparent' }}
-          />
-          <p style={{ color: 'var(--text-muted)' }}>Loading Launchboard...</p>
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Zap size={24} style={{ color: 'var(--gold)' }} />
+            <div
+              className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
+              style={{ borderColor: 'var(--gold)', borderTopColor: 'transparent' }}
+            />
+          </div>
+          <p style={{ color: 'var(--text-muted)' }}>Connecting to OpenCode...</p>
         </div>
       </div>
     );
@@ -121,115 +155,43 @@ export default function BoardPage() {
   return (
     <div className="flex h-screen" style={{ background: 'var(--bg-primary)' }}>
       <Sidebar
-        workspaces={workspaces}
-        activeWorkspaceId={activeWorkspaceId}
-        onWorkspaceChange={setActiveWorkspaceId}
+        sessions={sessions}
+        activeSessionId={activeSessionId}
+        onSessionChange={setActiveSessionId}
+        connected={connected}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header
-          workspaceName={activeWs?.name || 'Workspace'}
-          taskCount={filteredTasks.length}
-          onNewTask={() => setShowNewTask(true)}
+          title={headerTitle}
+          todoCount={totalTodos}
           onSearch={setSearchQuery}
+          onRefresh={() => loadBoard(false)}
+          lastRefresh={lastRefresh}
+          loading={loading}
         />
 
-        {loading ? (
-          <div className="flex items-center justify-center flex-1">
-            <div
-              className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin"
-              style={{ borderColor: 'var(--gold)', borderTopColor: 'transparent' }}
-            />
+        {/* Empty state for no todos */}
+        {totalTodos === 0 && !loading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <Zap size={40} className="mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                No todos found
+              </p>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                {activeSessionId
+                  ? 'This session has no todos yet'
+                  : 'Start coding with OpenCode to generate todos'}
+              </p>
+            </div>
           </div>
         ) : (
           <div className="flex-1 overflow-hidden">
-            <Kanban
-              columns={columns}
-              tasks={filteredTasks}
-              labels={labels}
-              onTasksChange={setTasks}
-              onTaskDeleted={(taskId) => {
-                setTasks((prev) => prev.filter((t) => t.id !== taskId));
-              }}
-            />
+            <Kanban columns={filteredColumns} />
           </div>
         )}
       </div>
-
-      {/* New Task Modal */}
-      <Modal
-        isOpen={showNewTask}
-        onClose={() => setShowNewTask(false)}
-        title="Create New Task"
-        maxWidth="480px"
-      >
-        <div className="p-6 space-y-4">
-          <Input
-            label="Title"
-            value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            placeholder="What needs to be done?"
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleCreateTask();
-            }}
-          />
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-                Priority
-              </label>
-              <select
-                value={newTaskPriority}
-                onChange={(e) => setNewTaskPriority(Number(e.target.value))}
-                className="px-3 py-2 rounded-lg text-sm cursor-pointer"
-                style={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                <option value={1}>P1 - Critical</option>
-                <option value={2}>P2 - High</option>
-                <option value={3}>P3 - Medium</option>
-                <option value={4}>P4 - Low</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-                Column
-              </label>
-              <select
-                value={newTaskColumnId}
-                onChange={(e) => setNewTaskColumnId(e.target.value)}
-                className="px-3 py-2 rounded-lg text-sm cursor-pointer"
-                style={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                {columns.map((col) => (
-                  <option key={col.id} value={col.id}>
-                    {col.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="secondary" size="sm" onClick={() => setShowNewTask(false)}>
-              Cancel
-            </Button>
-            <Button size="sm" onClick={handleCreateTask} disabled={creating || !newTaskTitle.trim()}>
-              {creating ? 'Creating...' : 'Create Task'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }

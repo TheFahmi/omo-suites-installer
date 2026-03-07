@@ -1,17 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Search, SlidersHorizontal } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Search, RefreshCw } from 'lucide-react';
 
 interface HeaderProps {
-  workspaceName: string;
-  taskCount: number;
-  onNewTask: () => void;
+  title: string;
+  todoCount: number;
   onSearch: (query: string) => void;
+  onRefresh: () => void;
+  lastRefresh: Date | null;
+  loading: boolean;
 }
 
-export function Header({ workspaceName, taskCount, onNewTask, onSearch }: HeaderProps) {
+export function Header({ title, todoCount, onSearch, onRefresh, lastRefresh, loading }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
 
@@ -25,29 +26,23 @@ export function Header({ workspaceName, taskCount, onNewTask, onSearch }: Header
       className="flex items-center justify-between px-4 md:px-6 py-3 flex-shrink-0"
       style={{ borderBottom: '1px solid var(--border)' }}
     >
-      {/* Left: New Task */}
-      <Button onClick={onNewTask} size="sm">
-        <Plus size={16} />
-        <span className="hidden sm:inline">New Task</span>
-      </Button>
-
-      {/* Center: Workspace info */}
+      {/* Left: Title + count */}
       <div className="flex items-center gap-2">
         <h1
           className="text-sm font-semibold"
           style={{ fontFamily: 'var(--font-heading), sans-serif' }}
         >
-          {workspaceName}
+          {title}
         </h1>
         <span
           className="text-xs px-2 py-0.5 rounded-full"
           style={{ background: 'var(--bg-card)', color: 'var(--text-muted)' }}
         >
-          {taskCount} tasks
+          {todoCount} {todoCount === 1 ? 'todo' : 'todos'}
         </span>
       </div>
 
-      {/* Right: Search + Filter */}
+      {/* Right: Search + Refresh */}
       <div className="flex items-center gap-2">
         {showSearch ? (
           <div className="relative">
@@ -56,7 +51,7 @@ export function Header({ workspaceName, taskCount, onNewTask, onSearch }: Header
               type="text"
               value={searchQuery}
               onChange={handleSearchChange}
-              placeholder="Search tasks..."
+              placeholder="Search todos..."
               autoFocus
               onBlur={() => {
                 if (!searchQuery) setShowSearch(false);
@@ -82,20 +77,22 @@ export function Header({ workspaceName, taskCount, onNewTask, onSearch }: Header
           >
             <Search size={14} />
             <span className="hidden sm:inline">Search</span>
-            <kbd
-              className="hidden sm:inline text-[10px] px-1 py-0.5 rounded ml-1"
-              style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)' }}
-            >
-              ⌘K
-            </kbd>
           </button>
         )}
 
         <button
-          className="p-1.5 rounded-lg transition-colors cursor-pointer"
-          style={{ color: 'var(--text-muted)', background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+          onClick={onRefresh}
+          disabled={loading}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer disabled:opacity-50"
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            color: 'var(--text-muted)',
+          }}
+          title={lastRefresh ? `Last refresh: ${lastRefresh.toLocaleTimeString()}` : 'Refresh'}
         >
-          <SlidersHorizontal size={16} />
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          <span className="hidden sm:inline">Refresh</span>
         </button>
       </div>
     </header>

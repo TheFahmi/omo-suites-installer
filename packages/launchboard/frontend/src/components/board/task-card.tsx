@@ -1,130 +1,64 @@
 'use client';
 
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { Bot } from 'lucide-react';
-import { Badge, PriorityDot, PriorityLabel } from '@/components/ui/badge';
-import type { Task } from '@/lib/types';
+import { GitBranch } from 'lucide-react';
+import type { BoardTodo } from '@/lib/types';
 
-interface TaskCardProps {
-  task: Task;
-  onClick: () => void;
-  isDragOverlay?: boolean;
+interface TodoCardProps {
+  todo: BoardTodo;
 }
 
-export function TaskCard({ task, onClick, isDragOverlay }: TaskCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: task.id,
-    data: { type: 'task', task },
-  });
+const PRIORITY_CONFIG: Record<string, { color: string; label: string; dot: string }> = {
+  high: { color: 'var(--p1)', label: 'High', dot: 'var(--p1)' },
+  medium: { color: 'var(--p2)', label: 'Medium', dot: 'var(--p2)' },
+  low: { color: 'var(--p4)', label: 'Low', dot: 'var(--p4)' },
+};
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.3 : 1,
-  };
+export function TodoCard({ todo }: TodoCardProps) {
+  const priority = PRIORITY_CONFIG[todo.priority] || PRIORITY_CONFIG.medium;
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
-      className={`rounded-lg p-3 cursor-pointer task-card-hover ${isDragOverlay ? 'drag-overlay' : ''}`}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') onClick();
-      }}
-      aria-label={`Task: ${task.title}`}
-    >
-      <div
-        className="rounded-lg p-3"
-        style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-        }}
-      >
-        {/* Top row: Priority + ShortId */}
-        <div className="flex items-center gap-2 mb-2">
-          <PriorityDot priority={task.priority} />
-          <PriorityLabel priority={task.priority} />
-          <span className="text-xs ml-auto" style={{ color: 'var(--text-muted)' }}>
-            {task.shortId}
-          </span>
-        </div>
-
-        {/* Title */}
-        <h4
-          className="text-sm font-medium mb-2 line-clamp-2"
-          style={{ color: 'var(--text-primary)' }}
-        >
-          {task.title}
-        </h4>
-
-        {/* Bottom row: Labels + Progress + AI */}
-        <div className="flex items-center gap-1.5 flex-wrap mt-auto">
-          {task.labels?.map((label) => (
-            <Badge key={label.id} color={label.color}>
-              {label.name}
-            </Badge>
-          ))}
-
-          {task.progress > 0 && (
-            <Badge color="var(--gold)">
-              {task.progress}%
-            </Badge>
-          )}
-
-          <div className="flex-1" />
-
-          {task.aiAssisted && (
-            <span
-              className="flex items-center gap-1 text-xs"
-              style={{ color: 'var(--gold)' }}
-            >
-              <Bot size={12} />
-              ai
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Static version for DragOverlay
-export function TaskCardOverlay({ task }: { task: Task }) {
-  return (
-    <div
-      className="rounded-lg p-3 drag-overlay"
+      className="rounded-lg p-3 mb-1.5 task-card-hover cursor-default"
       style={{
         background: 'var(--bg-card)',
-        border: '1px solid var(--gold)',
-        width: 280,
+        border: '1px solid var(--border)',
       }}
     >
+      {/* Priority badge row */}
       <div className="flex items-center gap-2 mb-2">
-        <PriorityDot priority={task.priority} />
-        <PriorityLabel priority={task.priority} />
+        <span
+          className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+          style={{ backgroundColor: priority.dot }}
+        />
+        <span
+          className="text-xs font-semibold"
+          style={{ color: priority.color }}
+        >
+          {priority.label}
+        </span>
         <span className="text-xs ml-auto" style={{ color: 'var(--text-muted)' }}>
-          {task.shortId}
+          {todo.id.slice(0, 8)}
         </span>
       </div>
-      <h4 className="text-sm font-medium line-clamp-2" style={{ color: 'var(--text-primary)' }}>
-        {task.title}
-      </h4>
+
+      {/* Content */}
+      <p
+        className="text-sm font-medium mb-2 line-clamp-3"
+        style={{ color: 'var(--text-primary)', lineHeight: 1.5 }}
+      >
+        {todo.content}
+      </p>
+
+      {/* Session info */}
+      <div className="flex items-center gap-1.5">
+        <GitBranch size={11} style={{ color: 'var(--text-muted)' }} />
+        <span
+          className="text-[11px] truncate"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          {todo.sessionTitle}
+        </span>
+      </div>
     </div>
   );
 }
