@@ -105,7 +105,50 @@ export function registerLaunchboardCommand(program: Command) {
         console.log(chalk.dim('  Backend:'), chalk.white('http://localhost:3030'));
         console.log(chalk.dim('  Frontend:'), chalk.white('http://localhost:3040'));
         console.log(chalk.dim('  Press Ctrl+C to stop\n'));
-        execSync('bash setup.sh', { cwd: LAUNCHBOARD_DIR, stdio: 'inherit' });
+
+        // Cross-platform setup (replaces bash setup.sh)
+        const lbDir = LAUNCHBOARD_DIR;
+        const frontendDir = resolve(lbDir, 'frontend');
+        const isWin = process.platform === 'win32';
+        const runCmd = (cmd: string, cwd: string) => execSync(cmd, { cwd, stdio: 'inherit', shell: isWin ? 'cmd.exe' : '/bin/sh' });
+
+        // Install deps if needed
+        if (!existsSync(resolve(lbDir, 'node_modules'))) {
+          console.log(chalk.dim('  Installing backend dependencies...'));
+          runCmd('bun install', lbDir);
+        }
+        if (!existsSync(resolve(frontendDir, 'node_modules'))) {
+          console.log(chalk.dim('  Installing frontend dependencies...'));
+          runCmd('bun install', frontendDir);
+        }
+
+        // Create DB if needed
+        if (!existsSync(resolve(lbDir, 'launchboard.db'))) {
+          console.log(chalk.dim('  Creating database...'));
+          runCmd('bunx drizzle-kit push', lbDir);
+          console.log(chalk.dim('  Seeding sample data...'));
+          runCmd('bun run seed', lbDir);
+        }
+
+        // Start backend + frontend via spawn (cross-platform)
+        const { spawn: spawnProc } = await import('child_process');
+        const backendProc = spawnProc('bun', ['run', 'start'], { cwd: lbDir, stdio: 'inherit', shell: isWin });
+        const frontendProc = spawnProc('bun', ['run', 'dev'], { cwd: frontendDir, stdio: 'inherit', shell: isWin });
+
+        // Handle Ctrl+C gracefully
+        const cleanup = () => {
+          backendProc.kill();
+          frontendProc.kill();
+          process.exit(0);
+        };
+        process.on('SIGINT', cleanup);
+        process.on('SIGTERM', cleanup);
+
+        // Wait for either to exit
+        await new Promise<void>((res) => {
+          backendProc.on('exit', () => { frontendProc.kill(); res(); });
+          frontendProc.on('exit', () => { backendProc.kill(); res(); });
+        });
       }
     });
 
