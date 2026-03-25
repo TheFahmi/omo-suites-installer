@@ -1,16 +1,21 @@
 import type { Plugin } from "@opencode-ai/plugin";
 import { tool } from "@opencode-ai/plugin/tool";
-import { existsSync, readFileSync, writeFileSync, readdirSync } from "fs";
+import { existsSync, readFileSync, writeFileSync, readdirSync, renameSync } from "fs";
 import { join, dirname, resolve } from "path";
 import { homedir } from "os";
 import { fileURLToPath } from "url";
+import { randomBytes } from "crypto";
 
 const __pkgDir = dirname(fileURLToPath(import.meta.url));
-let PLUGIN_VERSION = '1.3.0';
+let PLUGIN_VERSION = '0.0.0-unknown';
 try {
-  // Try sibling package.json first (built dist/), then parent (src/)
-  for (const p of [resolve(__pkgDir, 'package.json'), resolve(__pkgDir, '..', 'package.json')]) {
-    if (existsSync(p)) { PLUGIN_VERSION = JSON.parse(readFileSync(p, 'utf-8')).version; break; }
+  // Try sibling package.json first (built dist/), then parent (src/), then grandparent
+  for (const p of [
+    resolve(__pkgDir, 'package.json'),
+    resolve(__pkgDir, '..', 'package.json'),
+    resolve(__pkgDir, '..', '..', 'package.json'),
+  ]) {
+    if (existsSync(p)) { PLUGIN_VERSION = JSON.parse(readFileSync(p, 'utf-8')).version || PLUGIN_VERSION; break; }
   }
 } catch {}
 
@@ -59,7 +64,16 @@ function writeJsonFile(path: string, data: any): void {
       writeFileSync(path + ".bak", readFileSync(path));
     } catch { /* ignore backup failures */ }
   }
-  writeFileSync(path, JSON.stringify(data, null, 2));
+  // Atomic write: write to temp file then rename
+  const tmpFile = path + '.tmp.' + randomBytes(4).toString('hex');
+  try {
+    writeFileSync(tmpFile, JSON.stringify(data, null, 2));
+    renameSync(tmpFile, path);
+  } catch (err) {
+    // Clean up temp file on failure, fall back to direct write
+    try { if (existsSync(tmpFile)) writeFileSync(tmpFile, ''); } catch {}
+    writeFileSync(path, JSON.stringify(data, null, 2));
+  }
 }
 
 // ─── Format Helpers ──────────────────────────────────────────────────
@@ -116,7 +130,7 @@ function formatMcpList(): string {
 }
 
 function formatCategoryList(): string {
-  const lines: string[] = ["# Task Category Routing (32 categories)", ""];
+  const lines: string[] = ["# Task Category Routing (67 categories)", ""];
 
   for (const [category, agentId] of Object.entries(categoryRouting)) {
     const agent = agents[agentId];
@@ -317,7 +331,7 @@ const OmoSuitesPlugin: Plugin = async (ctx) => {
       }),
 
       omocs_agent_list: tool({
-        description: "List all 15 available OMO Suites agents with their models, thinking budgets, and specializations.",
+        description: "List all 28 available OMO Suites agents with their models, thinking budgets, and specializations.",
         args: {},
         async execute() {
           return formatAgentList();
@@ -394,12 +408,29 @@ const OmoSuitesPlugin: Plugin = async (ctx) => {
 
           for (const [key, lsp] of Object.entries(lspServers)) {
             const found = lsp.detect.some((pattern) => {
-              if (pattern.includes("*")) return false; // skip glob patterns, check specific files
+              if (pattern.includes("*")) {
+                // Glob pattern: check if any file in the directory matches
+                try {
+                  const ext = pattern.replace(/^\*\./, '.');
+                  const files = readdirSync(dir);
+                  return files.some(f => f.endsWith(ext));
+                } catch {
+                  return false;
+                }
+              }
               return existsSync(join(dir, pattern));
             });
             if (found) {
               detected.push(key);
-              suggestions.push(`✅ **${lsp.name}** (${key}) — detected via ${lsp.detect.filter(d => !d.includes("*") && existsSync(join(dir, d))).join(", ")}`);
+              suggestions.push(`✅ **${lsp.name}** (${key}) — detected via ${lsp.detect.filter(d => {
+                if (d.includes("*")) {
+                  try {
+                    const ext = d.replace(/^\*\./, '.');
+                    return readdirSync(dir).some(f => f.endsWith(ext));
+                  } catch { return false; }
+                }
+                return existsSync(join(dir, d));
+              }).join(", ")}`);
               suggestions.push(`   Install: ${lsp.install}`);
               suggestions.push(`   Command: ${lsp.command} ${lsp.args.join(" ")}`);
               suggestions.push("");

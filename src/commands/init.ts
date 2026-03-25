@@ -5,21 +5,37 @@ import inquirer from 'inquirer';
 import { execSync } from 'child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { resolve, dirname } from 'path';
-import { homedir } from 'os';
+import { homedir, hostname } from 'os';
+import { createHash } from 'crypto';
 import { showBanner, successBox, infoBox, heading, success, info, bullet, icons, handleError } from '../utils/ui.ts';
 import { readConfig, writeConfig, ensureConfigDir, configExists } from '../core/config.ts';
 import { detectOpenCode, writeOpenCodeConfig, mergeProfile, findOpencodeConfig, checkOhMyOpenCode } from '../core/opencode.ts';
+import { encrypt } from '../core/crypto.ts';
 import { profiles, getProfile } from '../data/profiles.ts';
 import { detectStack, suggestLSPs } from '../utils/detect.ts';
 import { lspServers } from '../data/lsp-registry.ts';
 import { mcpServers } from '../data/mcp-registry.ts';
 import { resolveLaunchboardDir } from '../utils/launchboard-resolver.ts';
 
+// Derive a machine-specific password for API key encryption
+// Deterministic per machine so keys can be decrypted later
+function getMachineKey(): string {
+  return createHash('sha256')
+    .update(`omocs:${hostname()}:${homedir()}`)
+    .digest('hex');
+}
+
+// Encrypt an API key for storage
+function encryptApiKey(apiKey: string): string {
+  return encrypt(apiKey, getMachineKey());
+}
+
 export function registerInitCommand(program: Command): void {
   program
     .command('init')
     .description('Interactive setup wizard — configure OMOCS for the first time')
     .option('-f, --force', 'Overwrite existing configuration')
+    .option('-q, --quick', 'Quick setup — skip non-essential prompts, auto-detect provider')
     .action(async (options) => {
       try {
         showBanner();
@@ -36,6 +52,158 @@ export function registerInitCommand(program: Command): void {
             info('Setup cancelled. Use --force to overwrite.');
             return;
           }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // QUICK MODE — Skip non-essential prompts
+        // ═══════════════════════════════════════════════════════════
+        if (options.quick) {
+          heading('⚡ Quick Setup');
+          info('Auto-detecting provider from environment variables...');
+
+          const quickSpinner = ora('Detecting environment...').start();
+
+          // Check OpenCode
+          const opencode = await detectOpenCode();
+          if (opencode.installed) {
+            quickSpinner.succeed(`OpenCode found${opencode.version ? ` (${opencode.version})` : ''}`);
+          } else {
+            quickSpinner.warn('OpenCode not found — configuring OMOCS only');
+          }
+
+          // Auto-detect provider from env vars
+          let detectedProvider: string | null = null;
+          let detectedApiKey: string | null = null;
+          let detectedBaseURL: string | null = null;
+
+          if (process.env.ANTHROPIC_API_KEY) {
+            detectedProvider = 'anthropic';
+            detectedApiKey = process.env.ANTHROPIC_API_KEY;
+          } else if (process.env.OPENAI_API_KEY) {
+            detectedProvider = 'openai';
+            detectedApiKey = process.env.OPENAI_API_KEY;
+            detectedBaseURL = process.env.OPENAI_BASE_URL || undefined as any;
+          } else if (process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY) {
+            detectedProvider = 'google';
+            detectedApiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || null;
+          } else if (process.env.OPENCODE_API_KEY) {
+            detectedProvider = 'custom';
+            detectedApiKey = process.env.OPENCODE_API_KEY;
+            detectedBaseURL = process.env.OPENCODE_API_BASE || undefined as any;
+          }
+
+          if (detectedProvider) {
+            info(`Detected provider: ${chalk.bold(detectedProvider)} (from environment)`);
+          }
+
+          // Only ask for essential info if not auto-detected
+          let apiKey = detectedApiKey;
+          let providerName = detectedProvider || 'openai-compatible';
+          let baseURL = detectedBaseURL;
+
+          if (!apiKey) {
+            const { key } = await inquirer.prompt([{
+              type: 'password',
+              name: 'key',
+              message: 'API key (or press Enter to skip):',
+              mask: '*',
+            }]);
+            apiKey = key || null;
+
+            if (apiKey && !baseURL) {
+              const { url } = await inquirer.prompt([{
+                type: 'input',
+                name: 'url',
+                message: 'API base URL (or press Enter for default):',
+                default: 'https://api.anthropic.com/v1',
+              }]);
+              baseURL = url;
+            }
+          }
+
+          // Choose model tier
+          const { modelTier } = await inquirer.prompt([{
+            type: 'list',
+            name: 'modelTier',
+            message: 'Preferred model tier:',
+            choices: [
+              { name: 'Premium (Opus/Codex — best quality)', value: 'premium' },
+              { name: 'Balanced (Sonnet — recommended)', value: 'balanced' },
+              { name: 'Economy (Flash/Kimi — cheapest)', value: 'economy' },
+            ],
+            default: 'balanced',
+          }]);
+
+          // Map tier to profile
+          const tierProfiles: Record<string, string> = {
+            premium: 'opus-4.6-all',
+            balanced: 'sonnet-4.6-all',
+            economy: 'budget-mixed',
+          };
+          const selectedProfile = tierProfiles[modelTier] || 'sonnet-4.6-all';
+
+          // Save config
+          const saveSpinner = ora('Saving configuration...').start();
+
+          ensureConfigDir();
+          const config = await readConfig();
+          config.activeProfile = selectedProfile;
+          config.activeAgent = 'sisyphus';
+          config.preferences = { autoRotate: false };
+          await writeConfig(config);
+
+          // Write opencode.json if we have provider info
+          if (apiKey) {
+            const opencodeConfigPath = findOpencodeConfig();
+            let opencodeConfig: Record<string, any> = {};
+            if (existsSync(opencodeConfigPath)) {
+              try { opencodeConfig = JSON.parse(readFileSync(opencodeConfigPath, 'utf-8')); } catch {}
+            }
+
+            if (baseURL) {
+              opencodeConfig.provider = {
+                name: providerName,
+                baseURL,
+                apiKey,
+              };
+            }
+
+            // Ensure plugins
+            if (!opencodeConfig.plugin) opencodeConfig.plugin = [];
+            if (!opencodeConfig.plugin.includes('oh-my-opencode')) {
+              opencodeConfig.plugin.push('oh-my-opencode');
+            }
+            if (!opencodeConfig.plugin.includes('omocs') && !opencodeConfig.plugin.some((p: string) => p.includes('omocs'))) {
+              opencodeConfig.plugin.push('omocs');
+            }
+
+            const configDir = dirname(opencodeConfigPath);
+            if (!existsSync(configDir)) {
+              mkdirSync(configDir, { recursive: true });
+            }
+            writeFileSync(opencodeConfigPath, JSON.stringify(opencodeConfig, null, 2));
+          }
+
+          // Apply profile
+          const profile = getProfile(selectedProfile)!;
+          await mergeProfile(profile);
+
+          saveSpinner.succeed(chalk.green('Configuration saved!'));
+
+          const providerLabel = detectedProvider
+            ? `${detectedProvider} (auto-detected)`
+            : apiKey ? 'custom' : 'none';
+
+          successBox('Quick Setup Complete! ⚡', [
+            `${icons.check} Profile: ${chalk.bold(profile.name)}`,
+            `${icons.check} Provider: ${chalk.bold(providerLabel)}`,
+            `${icons.check} Coder: ${chalk.bold(profile.agents.coder)}`,
+            `${icons.check} Task: ${chalk.bold(profile.agents.task)}`,
+            '',
+            `Run ${chalk.cyan('omocs doctor')} to verify, or ${chalk.cyan('omocs init')} for full setup.`,
+          ].join('\n'));
+
+          return; // Exit early — skip the full wizard
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -300,7 +468,8 @@ export function registerInitCommand(program: Command): void {
             name: 'openai-compatible',
             model: oneMrModel,
             baseURL: 'https://api.1mr.tech/v1',
-            apiKey: oneMrApiKey,
+            apiKey: encryptApiKey(oneMrApiKey),
+            _encrypted: true,
           };
 
           // Ensure parent directory exists
@@ -316,7 +485,8 @@ export function registerInitCommand(program: Command): void {
             subscription: 'custom',
             provider: {
               baseURL: 'https://api.1mr.tech/v1',
-              apiKey: oneMrApiKey,
+              apiKey: encryptApiKey(oneMrApiKey),
+              _encrypted: true,
             },
             agents: {
               sisyphus: { enabled: true, model: 'claude-opus-4-6' },

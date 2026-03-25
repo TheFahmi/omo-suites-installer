@@ -1,6 +1,6 @@
 {
   "name": "omo-suites",
-  "version": "1.9.1",
+  "version": "1.9.2",
   "description": "OMO Suites — OpenCode plugin + CLI toolkit. Multi-model orchestration, profiles, agent routing, MCP/LSP management.",
   "type": "module",
   "main": "dist/plugin.js",
@@ -38,7 +38,6 @@
   },
   "dependencies": {
     "@opencode-ai/plugin": "^1.2.20",
-    "better-sqlite3": "^11.0.0",
     "boxen": "^8.0.0",
     "chalk": "^5.4.0",
     "cli-table3": "^0.6.0",
@@ -46,6 +45,9 @@
     "inquirer": "^12.0.0",
     "ora": "^8.0.0",
     "zod": "^4.3.6"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^11.0.0"
   },
   "devDependencies": {
     "@types/bun": "latest",

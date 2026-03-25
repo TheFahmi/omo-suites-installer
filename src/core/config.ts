@@ -1,6 +1,7 @@
-import { mkdirSync, existsSync, readFileSync, writeFileSync } from 'fs';
+import { mkdirSync, existsSync, readFileSync, writeFileSync, renameSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
+import { randomBytes } from 'crypto';
 
 // ─── Types ───────────────────────────────────────────────────────────
 export interface AccountEntry {
@@ -63,7 +64,7 @@ export function getConfigPath(): string {
 }
 
 // ─── Read Config ─────────────────────────────────────────────────────
-export async function readConfig(): Promise<OmocsConfig> {
+export function readConfig(): OmocsConfig {
   ensureConfigDir();
   if (!existsSync(CONFIG_FILE)) {
     return defaultConfig();
@@ -77,49 +78,57 @@ export async function readConfig(): Promise<OmocsConfig> {
   }
 }
 
-// ─── Write Config ────────────────────────────────────────────────────
-export async function writeConfig(config: OmocsConfig): Promise<void> {
+// ─── Write Config (atomic: write to temp file then rename) ───────────
+export function writeConfig(config: OmocsConfig): void {
   ensureConfigDir();
-  writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
+  const tmpFile = CONFIG_FILE + '.tmp.' + randomBytes(4).toString('hex');
+  try {
+    writeFileSync(tmpFile, JSON.stringify(config, null, 2));
+    renameSync(tmpFile, CONFIG_FILE);
+  } catch (err) {
+    // Clean up temp file on failure
+    try { if (existsSync(tmpFile)) writeFileSync(tmpFile, ''); } catch {}
+    throw err;
+  }
 }
 
 // ─── Update Config ───────────────────────────────────────────────────
-export async function updateConfig(updater: (config: OmocsConfig) => void): Promise<OmocsConfig> {
-  const config = await readConfig();
+export function updateConfig(updater: (config: OmocsConfig) => void): OmocsConfig {
+  const config = readConfig();
   updater(config);
-  await writeConfig(config);
+  writeConfig(config);
   return config;
 }
 
 // ─── Config Getters/Setters ──────────────────────────────────────────
-export async function getActiveProfile(): Promise<string> {
-  const config = await readConfig();
+export function getActiveProfile(): string {
+  const config = readConfig();
   return config.activeProfile;
 }
 
-export async function setActiveProfile(profile: string): Promise<void> {
-  await updateConfig(c => { c.activeProfile = profile; });
+export function setActiveProfile(profile: string): void {
+  updateConfig(c => { c.activeProfile = profile; });
 }
 
-export async function getActiveAgent(): Promise<string> {
-  const config = await readConfig();
+export function getActiveAgent(): string {
+  const config = readConfig();
   return config.activeAgent;
 }
 
-export async function setActiveAgent(agent: string): Promise<void> {
-  await updateConfig(c => { c.activeAgent = agent; });
+export function setActiveAgent(agent: string): void {
+  updateConfig(c => { c.activeAgent = agent; });
 }
 
-export async function getAccounts(provider?: string): Promise<Record<string, AccountEntry[]>> {
-  const config = await readConfig();
+export function getAccounts(provider?: string): Record<string, AccountEntry[]> {
+  const config = readConfig();
   if (provider) {
     return { [provider]: config.accounts[provider] || [] };
   }
   return config.accounts;
 }
 
-export async function addAccount(provider: string, entry: AccountEntry): Promise<void> {
-  await updateConfig(c => {
+export function addAccount(provider: string, entry: AccountEntry): void {
+  updateConfig(c => {
     if (!c.accounts[provider]) {
       c.accounts[provider] = [];
     }
@@ -127,9 +136,9 @@ export async function addAccount(provider: string, entry: AccountEntry): Promise
   });
 }
 
-export async function removeAccount(provider: string, label: string): Promise<boolean> {
+export function removeAccount(provider: string, label: string): boolean {
   let removed = false;
-  await updateConfig(c => {
+  updateConfig(c => {
     if (c.accounts[provider]) {
       const before = c.accounts[provider].length;
       c.accounts[provider] = c.accounts[provider].filter(a => a.label !== label);
@@ -139,6 +148,6 @@ export async function removeAccount(provider: string, label: string): Promise<bo
   return removed;
 }
 
-export async function configExists(): Promise<boolean> {
+export function configExists(): boolean {
   return existsSync(CONFIG_FILE);
 }

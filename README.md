@@ -50,8 +50,8 @@ curl -fsSL https://raw.githubusercontent.com/TheFahmi/omocs/main/install.sh | ba
 - **13 Profiles** — [→ docs/profiles.md](docs/profiles.md)
   Pre-built model configurations across 4 scope types: all, lead, mixed, and economy.
 
-- **15 Agents** — [→ docs/agents.md](docs/agents.md)
-  Specialized AI roles with tuned models, thinking budgets, and automatic task routing across 32 categories.
+- **28 Agents** — [→ docs/agents.md](docs/agents.md)
+  Specialized AI roles with tuned models, thinking budgets, and automatic task routing across 67 categories.
 
 - **12 Plugin Tools** — [→ docs/plugin.md](docs/plugin.md)
   Drop-in OpenCode plugin with system prompt injection — agents use tools automatically.

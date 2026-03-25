@@ -5,6 +5,7 @@ import ora from 'ora';
 import { mcpServers, getMcpServer, listMcpKeys } from '../data/mcp-registry.ts';
 import { addMcpToConfig, removeMcpFromConfig, readOpenCodeConfig } from '../core/opencode.ts';
 import { createTable, heading, success, fail, warn, info, icons, handleError } from '../utils/ui.ts';
+import { registerMcpStatusCommand } from './mcp-status.ts';
 
 export function registerMcpCommand(program: Command): void {
   const mcp = program
@@ -107,6 +108,9 @@ export function registerMcpCommand(program: Command): void {
         handleError(error);
       }
     });
+
+  // ─── mcp status ────────────────────────────────────────────────────
+  registerMcpStatusCommand(mcp);
 }
 
 async function installMcpServer(key: string): Promise<void> {

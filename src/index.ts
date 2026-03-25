@@ -11,23 +11,13 @@ import { registerMcpCommand } from './commands/mcp.ts';
 import { registerStatsCommand } from './commands/stats.ts';
 import { registerStatusCommand } from './commands/status.ts';
 import { registerLaunchboardCommand } from './commands/launchboard.ts';
+import { registerExportCommand, registerImportCommand } from './commands/export-import.ts';
+import { registerDiffCommand } from './commands/diff.ts';
+import { registerBenchmarkCommand } from './commands/benchmark.ts';
 
-import { readFileSync, existsSync } from 'fs';
-import { dirname, resolve } from 'path';
-import { fileURLToPath } from 'url';
+import { readPackageJson } from './utils/find-package-json.ts';
 
-// Walk up directories to find package.json (works in dev, built, and npm-installed contexts)
-function findPackageJson(): string {
-  let dir = dirname(fileURLToPath(import.meta.url));
-  for (let i = 0; i < 5; i++) {
-    const candidate = resolve(dir, 'package.json');
-    if (existsSync(candidate)) return candidate;
-    dir = dirname(dir);
-  }
-  return resolve(dirname(dirname(fileURLToPath(import.meta.url))), 'package.json');
-}
-
-const pkg = JSON.parse(readFileSync(findPackageJson(), 'utf-8'));
+const pkg = readPackageJson(import.meta.url);
 const VERSION = pkg.version;
 
 export const program = new Command();
@@ -57,6 +47,10 @@ registerMcpCommand(program);
 registerStatsCommand(program);
 registerStatusCommand(program);
 registerLaunchboardCommand(program);
+registerExportCommand(program);
+registerImportCommand(program);
+registerDiffCommand(program);
+registerBenchmarkCommand(program);
 
 // Default action (no command)
 program.action(() => {

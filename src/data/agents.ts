@@ -401,6 +401,7 @@ export const categoryRouting: Record<string, string> = {
   'project-management': 'agency-project-shepherd',
   'sprint': 'agency-project-shepherd',
   'stakeholder': 'agency-project-shepherd',
+  'risk-management': 'agency-project-shepherd',
 };
 
 export function getAgent(id: string): AgentRole | undefined {

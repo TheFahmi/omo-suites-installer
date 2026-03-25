@@ -1,21 +1,13 @@
 import chalk from 'chalk';
 import boxen from 'boxen';
 import Table from 'cli-table3';
-import { readFileSync, existsSync } from 'fs';
-import { dirname, resolve } from 'path';
-import { fileURLToPath } from 'url';
+import { findPackageJson } from './find-package-json.ts';
+import { readFileSync } from 'fs';
 
 // Find package.json version
 function getVersion(): string {
   try {
-    let dir = dirname(fileURLToPath(import.meta.url));
-    for (let i = 0; i < 5; i++) {
-      const candidate = resolve(dir, 'package.json');
-      if (existsSync(candidate)) {
-        return JSON.parse(readFileSync(candidate, 'utf-8')).version || '?';
-      }
-      dir = dirname(dir);
-    }
+    return JSON.parse(readFileSync(findPackageJson(import.meta.url), 'utf-8')).version || '?';
   } catch {}
   return '?';
 }
@@ -168,8 +160,29 @@ export function divider(): void {
 export function handleError(error: unknown): void {
   if (error instanceof Error) {
     errorBox('Error', error.message);
+
+    // Contextual help suggestions per error type
+    const msg = error.message.toLowerCase();
+    if (msg.includes('enoent') || msg.includes('no such file')) {
+      console.log(chalk.yellow('  💡 File or directory not found. Try running `omocs init` first.'));
+    } else if (msg.includes('eacces') || msg.includes('permission denied')) {
+      console.log(chalk.yellow('  💡 Permission denied. Try running with sudo or check file permissions.'));
+    } else if (msg.includes('econnrefused') || msg.includes('econnreset') || msg.includes('fetch failed')) {
+      console.log(chalk.yellow('  💡 Connection failed. Check your internet connection and try again.'));
+    } else if (msg.includes('json') || msg.includes('unexpected token')) {
+      console.log(chalk.yellow('  💡 Config file may be corrupted. Check for .bak backup files or run `omocs init --force`.'));
+    } else if (msg.includes('module') || msg.includes('cannot find')) {
+      console.log(chalk.yellow('  💡 Missing dependency. Try `npm install -g omo-suites@latest` to reinstall.'));
+    } else if (msg.includes('timeout')) {
+      console.log(chalk.yellow('  💡 Operation timed out. Check your network or try again later.'));
+    } else if (msg.includes('better-sqlite3') || msg.includes('native module')) {
+      console.log(chalk.yellow('  💡 Native module issue. Try `npm rebuild` or reinstall omo-suites.'));
+    }
+
     if (process.env.DEBUG) {
       console.error(chalk.gray(error.stack || ''));
+    } else {
+      console.log(chalk.gray('  Set DEBUG=1 for full stack trace.'));
     }
   } else {
     errorBox('Error', String(error));

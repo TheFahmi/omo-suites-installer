@@ -121,7 +121,16 @@ export function registerStatsCommand(program: Command): void {
         const spinner = ora('Reading database...').start();
 
         try {
-          const Database = (await import('better-sqlite3')).default;
+          let Database: any;
+          try {
+            Database = (await import('better-sqlite3')).default;
+          } catch {
+            spinner.stop();
+            warn('better-sqlite3 is not installed (optional dependency).');
+            info('Install it with: npm install -g better-sqlite3');
+            info('Stats requires SQLite support to read OpenCode\'s database.');
+            return;
+          }
           const db = new Database(dbPath, { readonly: true });
 
           const { start, end, label } = getDateRange(period);
