@@ -86,7 +86,7 @@ function formatProfileList(): string {
 }
 
 function formatAgentList(): string {
-  const lines: string[] = ["# OMO Suites Agents (15 agents — 32 task categories)", ""];
+  const lines: string[] = ["# OMO Suites Agents (28 agents — 67 task categories)", ""];
 
   for (const [id, agent] of Object.entries(agents)) {
     lines.push(`${agent.emoji} **${agent.name}** (${id})`);
@@ -633,7 +633,7 @@ const OmoSuitesPlugin: Plugin = async (ctx) => {
       // 9. Category list
       // ═══════════════════════════════════════════════════════════════
       omocs_categories: tool({
-        description: "List all 32 task categories and their agent routing. Shows which agent handles each type of task.",
+        description: "List all 67 task categories and their agent routing. Shows which agent handles each type of task.",
         args: {},
         async execute() {
           return formatCategoryList();
@@ -776,7 +776,7 @@ const OmoSuitesPlugin: Plugin = async (ctx) => {
         `- Categories: omocs_categories\n` +
         `- Launchboard: omocs_task_list, omocs_task_create, omocs_task_update, omocs_task_move\n` +
         `\n` +
-        `OMO Suites has 13 profiles (vs OCS's 8), 15 agents, 32 task categories, 11 MCP servers, 10 LSP configs, and Launchboard integration.`
+        `OMO Suites has 13 profiles (vs OCS's 8), 28 agents, 67 task categories, 11 MCP servers, 10 LSP configs, and Launchboard integration.`
       );
     },
   };
