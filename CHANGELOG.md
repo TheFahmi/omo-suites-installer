@@ -30,6 +30,40 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Moved `better-sqlite3` to optionalDependencies
 - CLI startup optimization (skip update check for --help/--version)
 
+## [1.9.1] - 2026-03-25
+
+### Added
+- 13 new Agency agents (from github.com/msitarzewski/agency-agents): security-engineer, devops-automator, mobile-app-builder, ai-engineer, rapid-prototyper, accessibility-auditor, performance-benchmarker, api-tester, brand-guardian, content-creator, growth-hacker, ux-researcher, project-shepherd
+- Agent system prompt markdown files for all 13 new agents
+- Total agents expanded from 15 → 28, task categories from 32 → 67
+
+### Changed
+- Plugin agent list header updated to reflect 28 agents, 67 task categories
+- `omocs_categories` tool description updated to 67 categories
+
+## [1.9.0] - 2026-03-07
+
+### Added
+- **`omocs status` command** — shows current provider info, API key (masked), default model, and config path
+- 1mr.tech token balance fetching in `omocs status` (tokens remaining, tokens used, key status)
+- **1mr.tech provider support in `omocs init`** (Step 5) — prompt for API key, validate via `GET /v1/usage`, select model
+- Auto-generates `opencode.json` and `oh-my-opencode.json` with 1mr.tech config
+- Graceful fallback when 1mr.tech API is unreachable (skip validation with warning)
+
+### Changed
+- **Launchboard rewritten to pull from OpenCode API** — removed SQLite/Drizzle dependency entirely, backend now proxies to OpenCode API (default `localhost:1337`)
+- New Launchboard routes: `/api/sessions`, `/api/board` (aggregated kanban)
+- Launchboard kanban board shows todo status columns: Pending → In Progress → Completed → Cancelled
+- Todo cards show content, priority badge, parent session; sidebar lists sessions with todo counts
+- Auto-refresh every 30 seconds; graceful "No OpenCode detected" screen when API unreachable
+- `OPENCODE_API_URL` env var for Launchboard configuration
+- **Launchboard auto-update system** — git + npm dual-mode auto-update with 5-minute cache, `/api/update` endpoint for status/trigger
+
+### Removed
+- Launchboard local database (`db/`, `drizzle.config`, `setup.sh`)
+- Launchboard MCP server, stats/rules pages, drag-and-drop (now read-only board)
+- Launchboard `columns`, `labels`, `tasks`, `workspaces`, `stats`, `rules` routes
+
 ## [1.8.0] - 2026-03-07
 
 ### Added
