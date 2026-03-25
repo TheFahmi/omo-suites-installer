@@ -5,6 +5,31 @@ All notable changes to OMO Suites will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.2] - 2026-03-25
+
+### Added
+- `omocs export [filename]` — export all config to single JSON file
+- `omocs import <filename>` — import config with confirmation (supports --force)
+- `omocs diff <profile1> <profile2>` — side-by-side profile comparison with color-coded output
+- `omocs benchmark [prompt]` — compare response time across models (supports --models, --timeout)
+- `omocs mcp status` — MCP server health check with green/red status indicators
+- `omocs init --quick` — quick setup with auto-detection from env vars
+- Missing 67th task category: risk-management → agency-project-shepherd
+
+### Fixed
+- LSP glob detection bug — CSS, HTML, JSON, YAML, SQL, Markdown LSPs now detectable
+- Async/sync mismatch in config.ts
+- Stale PLUGIN_VERSION fallback
+- README updated to 28 agents, 67 task categories
+
+### Changed
+- API key encryption using AES-256-GCM (keys encrypted before storing in config)
+- Deduplicated `findPackageJson()` into single utility
+- Atomic config writes (write to temp file, rename — prevents corruption)
+- Improved error messages with contextual help suggestions
+- Moved `better-sqlite3` to optionalDependencies
+- CLI startup optimization (skip update check for --help/--version)
+
 ## [1.8.0] - 2026-03-07
 
 ### Added
