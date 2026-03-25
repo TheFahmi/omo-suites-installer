@@ -18,6 +18,10 @@ import { registerInitDeepCommand } from './commands/init-deep.ts';
 import { registerPlanCommand } from './commands/plan.ts';
 import { registerCostCommand } from './commands/cost.ts';
 import { registerCheckCommand } from './commands/check.ts';
+import { registerMemoryCommand } from './commands/memory.ts';
+import { registerCompletionCommand } from './commands/completion.ts';
+import { registerIndexCommand } from './commands/index-cmd.ts';
+
 
 import { readPackageJson } from './utils/find-package-json.ts';
 
@@ -59,6 +63,10 @@ registerInitDeepCommand(program);
 registerPlanCommand(program);
 registerCostCommand(program);
 registerCheckCommand(program);
+registerMemoryCommand(program);
+registerCompletionCommand(program);
+registerIndexCommand(program);
+
 
 // Default action (no command)
 program.action(() => {

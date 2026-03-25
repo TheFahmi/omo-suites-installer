@@ -5,6 +5,22 @@ All notable changes to OMO Suites will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-03-25
+
+### Added
+- `omocs memory list|add|search|remove` — Workspace Memory Notes
+  - Workspace-scoped persistent notes stored in `~/.omocs/memory/`
+  - Supports fuzzy search and global notes via `--global`
+- `omocs completion <shell>` — Shell Completions
+  - Generates completion scripts for bash, zsh, and fish
+  - Includes subcommands and flags
+- Enhanced `omocs doctor`
+  - Added checks for Provider endpoint ping, Config file validity, oh-my-opencode installation, Skills directory, and Disk space
+- `omocs index build|show|clean` — Workspace Index
+  - Scans workspace to build a cacheable JSON index
+  - Detects tech stack, entry points, and key files
+  - Respects `.gitignore` and skips noisy directories
+
 ## [1.10.0] - 2026-03-25
 
 ### Added

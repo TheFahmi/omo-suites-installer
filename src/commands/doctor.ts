@@ -233,6 +233,99 @@ async function runChecks(): Promise<CheckResult[]> {
     });
   }
 
+
+  // 11. Check Provider endpoint ping
+  spinner.text = 'Checking Provider endpoints...';
+  if (hasConfig) {
+    const config = await readConfig();
+    const providers = Object.keys(config.accounts);
+    if (providers.length > 0) {
+      try {
+        let pings = [];
+        for (const p of providers) {
+          // simple mapping or guess URL
+          let url = 'https://api.openai.com';
+          if (p.toLowerCase().includes('anthropic')) url = 'https://api.anthropic.com';
+          else if (p.toLowerCase().includes('google')) url = 'https://generativelanguage.googleapis.com';
+          else if (p.toLowerCase().includes('mfah')) url = 'https://llm.mfah.me';
+          
+          try {
+            const res = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(3000) });
+            if (res.ok) pings.push(`${p}: OK`);
+            else pings.push(`${p}: FAIL`);
+          } catch {
+             pings.push(`${p}: FAIL`);
+          }
+        }
+        results.push({
+          name: 'Provider Endpoints',
+          status: pings.some(p => p.includes('OK')) ? 'pass' : 'warn',
+          message: pings.join(', '),
+        });
+      } catch (e) {
+        results.push({
+          name: 'Provider Endpoints',
+          status: 'warn',
+          message: 'Ping failed',
+        });
+      }
+    } else {
+      results.push({ name: 'Provider Endpoints', status: 'warn', message: 'No providers configured to ping' });
+    }
+  }
+
+  // 12. Config file validity
+  spinner.text = 'Checking OMOCS config validity...';
+  if (hasConfig) {
+    try {
+      const path = getConfigPath();
+      const raw = readFileSync(path, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.version && parsed.accounts) {
+        results.push({ name: 'Config Validity', status: 'pass', message: 'Config JSON is valid and complete' });
+      } else {
+        results.push({ name: 'Config Validity', status: 'fail', message: 'Config missing required fields (version, accounts)' });
+      }
+    } catch (e) {
+      results.push({ name: 'Config Validity', status: 'fail', message: 'Config JSON is malformed' });
+    }
+  }
+
+  // 13. oh-my-opencode installation check
+  spinner.text = 'Checking oh-my-opencode installation...';
+  const omoInstalled = await commandExists('omo');
+  if (omoInstalled) {
+    results.push({ name: 'oh-my-opencode', status: 'pass', message: 'Installed' });
+  } else {
+    results.push({ name: 'oh-my-opencode', status: 'warn', message: 'Not installed globally' });
+  }
+
+  // 14. Skills directory exists check
+  spinner.text = 'Checking Skills directory...';
+  const skillsDir = join(homedir(), '.omocs', 'skills');
+  if (existsSync(skillsDir)) {
+    results.push({ name: 'Skills Directory', status: 'pass', message: `Found at ${skillsDir}` });
+  } else {
+    results.push({ name: 'Skills Directory', status: 'warn', message: `Not found (${skillsDir})` });
+  }
+
+  // 15. Disk space check for ~/.omocs/
+  spinner.text = 'Checking disk space for ~/.omocs/...';
+  const omocsDir = join(homedir(), '.omocs');
+  try {
+    if (!existsSync(omocsDir)) {
+      results.push({ name: 'OMOCS Directory Space', status: 'warn', message: 'Directory does not exist yet' });
+    } else {
+      const testFile = join(omocsDir, '.disktest');
+      writeFileSync(testFile, 'test');
+      const stats = statSync(testFile);
+      unlinkSync(testFile);
+      results.push({ name: 'OMOCS Directory Space', status: 'pass', message: 'Writable and accessible' });
+    }
+  } catch (e) {
+    results.push({ name: 'OMOCS Directory Space', status: 'warn', message: 'Could not write to ~/.omocs/' });
+  }
+
   spinner.stop();
   return results;
 }
