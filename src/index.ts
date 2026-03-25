@@ -14,6 +14,10 @@ import { registerLaunchboardCommand } from './commands/launchboard.ts';
 import { registerExportCommand, registerImportCommand } from './commands/export-import.ts';
 import { registerDiffCommand } from './commands/diff.ts';
 import { registerBenchmarkCommand } from './commands/benchmark.ts';
+import { registerInitDeepCommand } from './commands/init-deep.ts';
+import { registerPlanCommand } from './commands/plan.ts';
+import { registerCostCommand } from './commands/cost.ts';
+import { registerCheckCommand } from './commands/check.ts';
 
 import { readPackageJson } from './utils/find-package-json.ts';
 
@@ -51,6 +55,10 @@ registerExportCommand(program);
 registerImportCommand(program);
 registerDiffCommand(program);
 registerBenchmarkCommand(program);
+registerInitDeepCommand(program);
+registerPlanCommand(program);
+registerCostCommand(program);
+registerCheckCommand(program);
 
 // Default action (no command)
 program.action(() => {

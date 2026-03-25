@@ -54,7 +54,7 @@ curl -fsSL https://raw.githubusercontent.com/TheFahmi/omocs/main/install.sh | ba
   Specialized AI roles with tuned models, thinking budgets, and automatic task routing across 67 categories.
 
 - **12 Plugin Tools** — [→ docs/plugin.md](docs/plugin.md)
-  Drop-in OpenCode plugin with system prompt injection — agents use tools automatically.
+  Drop-in OpenCode plugin with system prompt injection — agents use tools automatically. Includes `omocs_init_deep` and `omocs_check`.
 
 - **11 MCP Servers** — [→ docs/mcp.md](docs/mcp.md)
   One-click install for Postgres, Redis, Brave Search, Docker, Sentry, and more.
@@ -63,7 +63,7 @@ curl -fsSL https://raw.githubusercontent.com/TheFahmi/omocs/main/install.sh | ba
   Auto-detect your project stack and install the right language servers.
 
 - **Full CLI** — [→ docs/cli.md](docs/cli.md)
-  Profiles, agents, accounts, MCP, LSP, stats — all from the command line.
+  Profiles, agents, accounts, MCP, LSP, stats, cost estimation, comment quality checker — all from the command line.
 
 ## Quick Start
 
@@ -72,6 +72,10 @@ omocs init                      # Setup wizard
 omocs profile use ultra-mixed   # Best model for every task
 omocs agent route debugging     # See which agent handles what
 omocs doctor                    # Verify everything works
+omocs init-deep                 # Generate AGENTS.md hierarchy
+omocs cost opus-4.6-all         # Estimate costs per profile
+omocs check                     # Scan for AI slop comments
+omocs plan                      # Interactive planning before coding
 ```
 
 ## 🚀 Launchboard

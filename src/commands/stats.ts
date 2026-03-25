@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
-import { existsSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 import { createTable, heading, success, fail, warn, info, icons, handleError, infoBox, successBox } from '../utils/ui.ts';
@@ -87,15 +87,170 @@ function formatTokens(n: number): string {
   return n.toString();
 }
 
+// ─── TUI Bar Chart ──────────────────────────────────────────────────
+function renderBarChart(data: { label: string; value: number; color?: typeof chalk.green }[], maxWidth: number = 40): string {
+  if (data.length === 0) return '  (no data)';
+
+  const maxValue = Math.max(...data.map(d => d.value), 1);
+  const maxLabelLen = Math.max(...data.map(d => d.label.length), 5);
+  const lines: string[] = [];
+
+  for (const item of data) {
+    const barLen = Math.round((item.value / maxValue) * maxWidth);
+    const bar = '█'.repeat(barLen) + '░'.repeat(maxWidth - barLen);
+    const colorFn = item.color || chalk.cyan;
+    const paddedLabel = item.label.padEnd(maxLabelLen);
+    lines.push(`  ${chalk.gray(paddedLabel)} ${colorFn(bar)} ${chalk.bold(String(item.value))}`);
+  }
+
+  return lines.join('\n');
+}
+
+// ─── Aggregated Stats Store ─────────────────────────────────────────
+interface AggregatedStats {
+  lastUpdated: string;
+  sessions: {
+    total: number;
+    byDate: Record<string, number>;
+  };
+  agents: Record<string, {
+    invocations: number;
+    totalInputTokens: number;
+    totalOutputTokens: number;
+    avgResponseTimeMs: number;
+    lastUsed: string;
+  }>;
+}
+
+function getStatsPath(): string {
+  return join(homedir(), '.omocs', 'stats.json');
+}
+
+function readAggregatedStats(): AggregatedStats {
+  const path = getStatsPath();
+  if (existsSync(path)) {
+    try {
+      return JSON.parse(readFileSync(path, 'utf-8'));
+    } catch {}
+  }
+  return {
+    lastUpdated: new Date().toISOString(),
+    sessions: { total: 0, byDate: {} },
+    agents: {},
+  };
+}
+
+function writeAggregatedStats(stats: AggregatedStats): void {
+  const dir = join(homedir(), '.omocs');
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+  writeFileSync(getStatsPath(), JSON.stringify(stats, null, 2));
+}
+
+// ─── Dashboard View ─────────────────────────────────────────────────
+function showDashboard(lastN?: number): void {
+  const stats = readAggregatedStats();
+
+  heading('📊 Agent Analytics Dashboard');
+
+  if (Object.keys(stats.agents).length === 0) {
+    infoBox('No Agent Data Yet', [
+      'Agent analytics are populated from OpenCode session data.',
+      '',
+      'To collect data:',
+      `  1. Run ${chalk.cyan('opencode')} and work on some tasks`,
+      `  2. Run ${chalk.cyan('omocs stats --sync')} to import session data`,
+      '',
+      `Stats file: ${chalk.gray(getStatsPath())}`,
+    ].join('\n'));
+    return;
+  }
+
+  // Agent usage chart
+  const agentEntries = Object.entries(stats.agents)
+    .sort((a, b) => b[1].invocations - a[1].invocations)
+    .slice(0, lastN || 15);
+
+  console.log('');
+  heading('Most Used Agents');
+  console.log(renderBarChart(
+    agentEntries.map(([name, data]) => ({
+      label: name,
+      value: data.invocations,
+      color: chalk.green,
+    })),
+    35,
+  ));
+
+  // Token usage chart
+  console.log('');
+  heading('Token Usage by Agent');
+  console.log(renderBarChart(
+    agentEntries.map(([name, data]) => ({
+      label: name,
+      value: data.totalInputTokens + data.totalOutputTokens,
+      color: chalk.blue,
+    })),
+    35,
+  ));
+
+  // Response time chart
+  const withTiming = agentEntries.filter(([_, d]) => d.avgResponseTimeMs > 0);
+  if (withTiming.length > 0) {
+    console.log('');
+    heading('Avg Response Time (ms)');
+    console.log(renderBarChart(
+      withTiming.map(([name, data]) => ({
+        label: name,
+        value: Math.round(data.avgResponseTimeMs),
+        color: chalk.yellow,
+      })),
+      35,
+    ));
+  }
+
+  // Summary table
+  console.log('');
+  heading('Agent Summary');
+
+  const rows = agentEntries.map(([name, data]) => [
+    name,
+    data.invocations,
+    formatTokens(data.totalInputTokens),
+    formatTokens(data.totalOutputTokens),
+    data.avgResponseTimeMs > 0 ? `${Math.round(data.avgResponseTimeMs)}ms` : '—',
+    data.lastUsed ? data.lastUsed.split('T')[0] : '—',
+  ]);
+
+  console.log(createTable(
+    ['Agent', 'Calls', 'Input', 'Output', 'Avg Time', 'Last Used'],
+    rows,
+  ));
+
+  console.log('');
+  info(`Last updated: ${chalk.gray(stats.lastUpdated)}`);
+  info(`Stats file: ${chalk.gray(getStatsPath())}`);
+}
+
 export function registerStatsCommand(program: Command): void {
   program
     .command('stats')
-    .description('Token usage statistics')
+    .description('Token usage statistics and agent analytics dashboard')
     .argument('[period]', 'Time period: today, week, month', 'today')
     .option('--export <file>', 'Export to CSV file')
     .option('--db <path>', 'Path to OpenCode database')
-    .action(async (period: string, options) => {
+    .option('--dashboard', 'Show agent analytics dashboard with TUI charts')
+    .option('--last <n>', 'Limit to last N agents (dashboard mode)')
+    .option('--sync', 'Sync session data to aggregated stats')
+    .action(async (period: string, options: { export?: string; db?: string; dashboard?: boolean; last?: string; sync?: boolean }) => {
       try {
+        // Dashboard mode
+        if (options.dashboard) {
+          showDashboard(options.last ? parseInt(options.last, 10) : undefined);
+          return;
+        }
+
         heading('📊 Usage Statistics');
 
         const dbPath = options.db || findDatabase();
@@ -114,6 +269,8 @@ export function registerStatsCommand(program: Command): void {
             '  • ~/.config/opencode/data.db',
             '',
             `Run ${chalk.cyan('opencode')} to create sessions, then check stats.`,
+            '',
+            `Try ${chalk.cyan('omocs stats --dashboard')} for agent analytics.`,
           ].join('\n'));
           return;
         }
@@ -186,8 +343,23 @@ export function registerStatsCommand(program: Command): void {
             `${chalk.gray('Est. Cost:')}    ${chalk.bold.green('$' + cost.toFixed(2))}`,
           ].join('\n'));
 
-          // Daily breakdown
+          // TUI bar chart for daily tokens
+          if (dailyStats.length > 1) {
+            console.log('');
+            heading('Daily Token Usage');
+            console.log(renderBarChart(
+              dailyStats.slice(0, 10).reverse().map(d => ({
+                label: d.date,
+                value: d.input_tokens + d.output_tokens,
+                color: chalk.cyan,
+              })),
+              35,
+            ));
+          }
+
+          // Daily breakdown table
           if (dailyStats.length > 0) {
+            console.log('');
             heading('Daily Breakdown');
             const rows = dailyStats.map(d => [
               d.date,
@@ -203,6 +375,19 @@ export function registerStatsCommand(program: Command): void {
             ));
           }
 
+          // Sync stats
+          if (options.sync) {
+            const aggregated = readAggregatedStats();
+            aggregated.sessions.total = sessions;
+            for (const d of dailyStats) {
+              aggregated.sessions.byDate[d.date] = d.messages;
+            }
+            aggregated.lastUpdated = new Date().toISOString();
+            writeAggregatedStats(aggregated);
+            console.log('');
+            success(`Stats synced to ${getStatsPath()}`);
+          }
+
           // Export
           if (options.export) {
             const csvLines = [
@@ -214,6 +399,10 @@ export function registerStatsCommand(program: Command): void {
             writeFileSync(options.export, csvLines.join('\n'));
             success(`Exported to ${options.export}`);
           }
+
+          // Hint about dashboard
+          console.log('');
+          info(`Try ${chalk.cyan('omocs stats --dashboard')} for agent analytics view.`);
 
         } catch (dbError) {
           spinner.stop();

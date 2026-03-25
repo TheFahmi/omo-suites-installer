@@ -5,6 +5,36 @@ All notable changes to OMO Suites will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-03-25
+
+### Added
+- `omocs init-deep [path]` — Auto-generate hierarchical AGENTS.md files per significant folder
+  - Scans project structure recursively, infers folder purpose, tech stack, naming conventions
+  - Generates root AGENTS.md with project overview + per-folder AGENTS.md for significant dirs
+  - Supports `--depth <n>` (default: 3) and `--dry-run` to preview
+  - Skips node_modules, .git, dist, build, .next, __pycache__, etc.
+- `omocs plan` — Prometheus-style interview planner for structured planning before coding
+  - Interactive mode asks 5 structured questions (goal, files, constraints, no-change, definition of done)
+  - Generates structured plan markdown: `.opencode/plans/plan-YYYY-MM-DD-HHmm.md`
+  - Supports `--output <path>` and `--non-interactive` for template generation
+- `omocs cost [profile]` — Profile cost calculator with model pricing estimates
+  - Shows per-agent cost breakdown (per invocation, per hour, per day)
+  - Supports `--compare <profile>` for side-by-side profile cost comparison
+  - Supports `--hours <n>` for custom workday projection (default: 8)
+  - Includes pricing for Claude Opus 4.6, Sonnet 4.6, GPT-5.3/5.4, Gemini 3.1 Pro, Kimi K2.5, DeepSeek
+- `omocs stats --dashboard` — Agent analytics dashboard with TUI bar charts
+  - Bar chart visualization for agent usage, token consumption, response times
+  - Aggregated stats stored in `~/.omocs/stats.json`
+  - Supports `--last <n>` to limit agents shown and `--sync` to import session data
+  - Enhanced existing stats command with daily token usage bar charts
+- `omocs check` — Comment quality checker for AI-generated code patterns
+  - Detects: obvious/redundant comments, vague TODOs, AI attribution, unexplained eslint-disable, @ts-ignore, commented-out code
+  - Reports findings with file:line references grouped by severity (high/medium/low)
+  - Supports `--fix` to auto-remove fixable AI slop comments
+  - Supports `--path <dir>` and `--severity <level>` filters
+- Plugin tools: `omocs_init_deep` and `omocs_check` registered as OpenCode plugin tools
+- System prompt injection updated with init-deep and check tool references
+
 ## [1.9.2] - 2026-03-25
 
 ### Added
