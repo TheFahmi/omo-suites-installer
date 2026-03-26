@@ -7,6 +7,14 @@
    ╚═════╝ ╚═╝     ╚═╝ ╚═════╝     ╚══════╝ ╚═════╝ ╚═╝   ╚═╝   ╚══════╝╚══════╝
 ```
 
+<p align="center">
+  <a href="https://www.npmjs.com/package/omo-suites"><img src="https://img.shields.io/npm/v/omo-suites.svg" alt="NPM Version" /></a>
+  <a href="https://www.npmjs.com/package/omo-suites"><img src="https://img.shields.io/npm/dm/omo-suites.svg" alt="NPM Downloads" /></a>
+  <a href="https://www.npmjs.com/package/omo-suites"><img src="https://img.shields.io/npm/l/omo-suites.svg" alt="License" /></a>
+  <a href="https://github.com/TheFahmi/omo-suites-installer"><img src="https://img.shields.io/github/stars/TheFahmi/omo-suites-installer.svg?style=social" alt="GitHub Stars" /></a>
+  <a href="https://www.npmjs.com/package/omo-suites"><img src="https://img.shields.io/node/v/omo-suites.svg" alt="Node Version" /></a>
+</p>
+
 # OMO Suites
 
 **The open-source OpenCode power toolkit. More profiles. More tools. Zero cost.**
