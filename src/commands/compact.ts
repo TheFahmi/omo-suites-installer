@@ -370,7 +370,7 @@ export function registerCompactCommand(program: Command): void {
         const issues = scanConfigIssues();
 
         if (issues.length === 0) {
-          successBox('No config issues found! Everything is clean.');
+          successBox('Clean', 'No config issues found! Everything is clean.');
           return;
         }
 
@@ -425,7 +425,7 @@ export function registerCompactCommand(program: Command): void {
         console.log(`  ${chalk.dim('Space savings:')}  ~${formatBytes(result.bytesFreed)}`);
 
         if (result.entriesRemoved === 0) {
-          successBox('Memory is already clean!');
+          successBox('Clean', 'Memory is already clean!');
         } else if (opts.fix) {
           success(`Removed ${result.entriesRemoved} old entries. ${result.archived} archive(s) created.`);
         } else {
@@ -458,7 +458,7 @@ export function registerCompactCommand(program: Command): void {
         console.log(`  ${chalk.dim('Space savings:')}   ~${formatBytes(result.bytesFreed)}`);
 
         if (result.orphanedRemoved === 0) {
-          successBox('All indexes are valid!');
+          successBox('Clean', 'All indexes are valid!');
         } else if (opts.fix) {
           success(`Removed ${result.orphanedRemoved} orphaned index(es). Freed ~${formatBytes(result.bytesFreed)}.`);
         } else {
@@ -492,7 +492,7 @@ export function registerCompactCommand(program: Command): void {
         console.log(`  ${chalk.dim('Space savings:')}  ~${formatBytes(result.bytesFreed)}`);
 
         if (result.entriesRemoved === 0) {
-          successBox('Stats are already clean!');
+          successBox('Clean', 'Stats are already clean!');
         } else if (opts.fix) {
           success(`Removed ${result.entriesRemoved} old entries. Freed ~${formatBytes(result.bytesFreed)}. Backup + archive created.`);
         } else {
@@ -562,9 +562,9 @@ export function registerCompactCommand(program: Command): void {
         console.log('');
         const totalIssues = configIssues.length + memResult.entriesRemoved + idxResult.orphanedRemoved + statsResult.entriesRemoved;
         if (totalIssues === 0) {
-          successBox('Everything is clean! No action needed.');
+          successBox('Clean', 'Everything is clean! No action needed.');
         } else if (fix) {
-          successBox(`Compact complete. ${totalIssues} issues resolved.`);
+          successBox('Done', `Compact complete. ${totalIssues} issues resolved.`);
         } else {
           console.log(chalk.yellow(`\n  ${totalIssues} total issues found.`));
           info(`Run ${chalk.cyan('omocs compact all --fix')} to clean everything up.`);

@@ -22,6 +22,13 @@ import { registerMemoryCommand } from './commands/memory.ts';
 import { registerCompletionCommand } from './commands/completion.ts';
 import { registerIndexCommand } from './commands/index-cmd.ts';
 import { registerCompactCommand } from './commands/compact.ts';
+import { registerSessionCommand } from './commands/session.ts';
+import { registerWorktreeCommand } from './commands/worktree.ts';
+import { registerTemplateCommand } from './commands/template.ts';
+import { registerFallbackCommand } from './commands/fallback.ts';
+import { registerWatchCommand } from './commands/watch.ts';
+import { registerMarketplaceCommand } from './commands/marketplace.ts';
+import { registerSquadCommand } from './commands/squad.ts';
 
 
 import { readPackageJson } from './utils/find-package-json.ts';
@@ -68,6 +75,13 @@ registerMemoryCommand(program);
 registerCompletionCommand(program);
 registerIndexCommand(program);
 registerCompactCommand(program);
+registerSessionCommand(program);
+registerWorktreeCommand(program);
+registerTemplateCommand(program);
+registerFallbackCommand(program);
+registerWatchCommand(program);
+registerMarketplaceCommand(program);
+registerSquadCommand(program);
 
 
 // Default action (no command)

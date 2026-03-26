@@ -5,6 +5,18 @@ All notable changes to OMO Suites will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] - 2026-03-26
+
+### Added
+- `omocs session list|search|show|diff` — browse, search, and inspect OpenCode sessions
+- `omocs worktree create|list|remove|prune` — git worktree management for task isolation
+- `omocs squad launch|status|kill|clean` — launch and manage parallel OpenCode agents via tmux
+- `omocs template save|load|list|delete|export` — save, load, and share config templates
+- `omocs fallback show|add|remove` — view and edit model fallback chains
+- `omocs watch start|generate` — auto-regenerate AGENTS.md on project structure changes
+- `omocs marketplace search|install|uninstall|installed|publish` — community plugin registry
+- All 7 commands close feature gaps identified in competitor analysis (Claude Squad, ccmanager, agent-session-manager, nca)
+
 ## [1.12.0] - 2026-03-26
 
 ### Added
