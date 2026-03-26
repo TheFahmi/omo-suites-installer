@@ -29,6 +29,8 @@ import { registerFallbackCommand } from './commands/fallback.ts';
 import { registerWatchCommand } from './commands/watch.ts';
 import { registerMarketplaceCommand } from './commands/marketplace.ts';
 import { registerSquadCommand } from './commands/squad.ts';
+import { registerAutoCommand } from './commands/auto.ts';
+import { runAutoChecks } from './core/auto.ts';
 
 
 import { readPackageJson } from './utils/find-package-json.ts';
@@ -42,7 +44,7 @@ program
   .name('omocs')
   .description('OMO Suites — CLI toolkit for OpenCode power users')
   .version(VERSION, '-v, --version', 'Show version')
-  .hook('preAction', () => {
+  .hook('preAction', (thisCommand) => {
     // Global error handling
     process.on('uncaughtException', (error) => {
       handleError(error);
@@ -50,6 +52,14 @@ program
     process.on('unhandledRejection', (error) => {
       handleError(error);
     });
+
+    // Auto checks on every command (non-blocking, silent)
+    // Skip for auto command itself, --help, --version
+    const cmdName = thisCommand.args?.[0] || thisCommand.name();
+    const skipAuto = ['auto', 'completion', 'help'].includes(cmdName);
+    if (!skipAuto) {
+      runAutoChecks(process.cwd(), { silent: false }).catch(() => {});
+    }
   });
 
 // Register all commands
@@ -82,6 +92,7 @@ registerFallbackCommand(program);
 registerWatchCommand(program);
 registerMarketplaceCommand(program);
 registerSquadCommand(program);
+registerAutoCommand(program);
 
 
 // Default action (no command)

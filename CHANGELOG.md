@@ -5,6 +5,20 @@ All notable changes to OMO Suites will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] - 2026-03-26
+
+### Added
+- **Auto system** — automatic background checks run on every `omocs` command (non-blocking)
+  - **Auto-Doctor** — workspace health check on first run per day (missing config, AGENTS.md, .gitignore)
+  - **Auto-Index** — rebuild workspace index when file structure changes (new/renamed files detected)
+  - **Auto-Compact** — periodic cleanup of stale memory, stats, and orphaned indexes (every 7 days)
+  - **Auto-Template Suggest** — detect empty projects and suggest matching saved templates
+- `omocs auto run` — manually trigger all auto checks
+- `omocs auto status` — view auto check state and timings
+- `omocs auto reset` — force re-run all checks
+- `omocs auto suppress <warning>` — hide specific warnings
+- Auto checks are silent unless there are warnings or fixes to report
+
 ## [1.13.0] - 2026-03-26
 
 ### Added
