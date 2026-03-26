@@ -21,6 +21,7 @@ import { registerCheckCommand } from './commands/check.ts';
 import { registerMemoryCommand } from './commands/memory.ts';
 import { registerCompletionCommand } from './commands/completion.ts';
 import { registerIndexCommand } from './commands/index-cmd.ts';
+import { registerCompactCommand } from './commands/compact.ts';
 
 
 import { readPackageJson } from './utils/find-package-json.ts';
@@ -66,6 +67,7 @@ registerCheckCommand(program);
 registerMemoryCommand(program);
 registerCompletionCommand(program);
 registerIndexCommand(program);
+registerCompactCommand(program);
 
 
 // Default action (no command)

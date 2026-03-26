@@ -5,6 +5,17 @@ All notable changes to OMO Suites will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2026-03-26
+
+### Added
+- `omocs compact config` — scan and clean stale config entries (duplicate plugins, empty MCP servers, stale provider keys)
+- `omocs compact memory` — trim old workspace memory notes with archiving (--keep, --older-than)
+- `omocs compact index` — clean up orphaned workspace indexes for non-existent workspaces
+- `omocs compact stats` — trim old stats data with archiving (--keep-days)
+- `omocs compact all` — run all compact operations with combined summary
+- All compact subcommands default to dry-run; use `--fix` to apply changes
+- Automatic backup before any destructive operation
+
 ## [1.11.0] - 2026-03-25
 
 ### Added
