@@ -55,16 +55,50 @@ function compareVersions(current: string, latest: string): number {
   return 0;
 }
 
-function doUpdate(): boolean {
+function verifyUpdate(version: string): boolean {
   try {
-    console.log(chalk.cyan('⬆ Updating omo-suites...'));
+    const result = execSync(`omocs --version`, {
+      encoding: 'utf-8',
+      timeout: 10000,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    return result.trim().includes(version);
+  } catch {
+    return false;
+  }
+}
+
+function doUpdate(currentVersion: string, latestVersion: string): boolean {
+  try {
+    console.log(chalk.cyan(`⬆ Updating omo-suites to v${latestVersion}...`));
+    
+    // Install new version
     execSync(`npm install -g ${PACKAGE_NAME}@latest`, {
       encoding: 'utf-8',
       timeout: 60000,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
+
+    // Verify update was successful and didn't break the CLI
+    console.log(chalk.dim('  Verifying installation...'));
+    if (!verifyUpdate(latestVersion)) {
+      throw new Error('Verification failed');
+    }
+
     return true;
-  } catch {
+  } catch (err) {
+    // Rollback
+    console.log(chalk.red('✖ Update failed or verification failed. Rolling back...'));
+    try {
+      execSync(`npm install -g ${PACKAGE_NAME}@${currentVersion}`, {
+        encoding: 'utf-8',
+        timeout: 60000,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+      console.log(chalk.yellow('↺ Rolled back to previous version.'));
+    } catch (rollbackErr) {
+      console.log(chalk.red('✖ Rollback failed. Please reinstall manually.'));
+    }
     return false;
   }
 }
@@ -98,7 +132,7 @@ export async function checkAndUpdate(currentVersion: string): Promise<boolean> {
       chalk.yellow(`\n⬆ New version available: ${chalk.red(currentVersion)} → ${chalk.green(latestVersion)}`)
     );
 
-    const updated = doUpdate();
+    const updated = doUpdate(currentVersion, latestVersion);
     if (updated) {
       console.log(chalk.green(`✅ Updated to v${latestVersion}. Restarting...\n`));
       // Re-exec the CLI with same args
