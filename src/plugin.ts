@@ -190,7 +190,10 @@ function checkPluginUpdate() {
 
 // ─── Plugin Definition ───────────────────────────────────────────────
 
+import { trackEvent } from "./utils/telemetry.ts";
+
 const OmoSuitesPlugin: Plugin = async (ctx) => {
+  trackEvent("plugin_loaded", { plugin: "omo-suites", status: "success" });
   console.log(`[OMO Suites] v${PLUGIN_VERSION} loaded`);
 
   // Check for updates on plugin load (OpenCode startup)

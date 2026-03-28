@@ -42,6 +42,7 @@ import { readPackageJson } from './utils/find-package-json.ts';
 const pkg = readPackageJson(import.meta.url);
 const VERSION = pkg.version;
 
+import { trackEvent } from "./utils/telemetry.ts";
 export const program = new Command();
 
 program
@@ -70,6 +71,7 @@ program
     const skipAuto = ['auto', 'completion', 'help'].includes(cmdName);
     if (!skipAuto) {
       runAutoChecks(process.cwd(), { silent: false }).catch(() => {});
+      trackEvent("command_invoked", { plugin: cmdName });
     }
   });
 

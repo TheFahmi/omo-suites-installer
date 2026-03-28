@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { readConfig, configExists, getConfigPath } from '../core/config.ts';
-import { heading, success, fail, icons } from '../utils/ui.ts';
+import { heading, success, fail, info, icons } from '../utils/ui.ts';
+import { setTelemetryEnabled, isTelemetryEnabled } from '../utils/telemetry.ts';
 import chalk from 'chalk';
 
 export function registerConfigCommand(program: Command): void {
@@ -33,6 +34,28 @@ export function registerConfigCommand(program: Command): void {
         }
       } catch (err: any) {
         console.log(`${icons.fail} Error reading or parsing config file: ${err.message}`);
+      }
+    });
+
+  configCmd
+    .command('telemetry')
+    .description('Manage telemetry settings')
+    .option('--enable', 'Enable telemetry')
+    .option('--disable', 'Disable telemetry')
+    .option('--status', 'Check telemetry status')
+    .action((options) => {
+      heading('Telemetry Configuration');
+      
+      if (options.enable) {
+        setTelemetryEnabled(true);
+        success('Telemetry has been enabled. Thank you for helping improve OMO Suites!');
+      } else if (options.disable) {
+        setTelemetryEnabled(false);
+        success('Telemetry has been disabled.');
+      } else if (options.status || (!options.enable && !options.disable)) {
+        const enabled = isTelemetryEnabled();
+        info(`Telemetry is currently ${enabled ? chalk.green('ENABLED') : chalk.red('DISABLED')}`);
+        console.log(`\nUse ${chalk.cyan('omocs config telemetry --enable')} or ${chalk.cyan('--disable')} to change.`);
       }
     });
 }
