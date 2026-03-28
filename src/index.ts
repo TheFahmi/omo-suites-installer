@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { showBanner, handleError } from './utils/ui.ts';
+import { setDebug, setVerbose, isDebug } from './utils/debug.ts';
 import { registerInitCommand } from './commands/init.ts';
 import { registerDoctorCommand } from './commands/doctor.ts';
 import { registerAccountCommand } from './commands/account.ts';
@@ -46,7 +47,14 @@ program
   .name('omocs')
   .description('OMO Suites — CLI toolkit for OpenCode power users')
   .version(VERSION, '-v, --version', 'Show version')
+  .option('--debug', 'Enable debug output')
+  .option('--verbose', 'Enable verbose output')
   .hook('preAction', (thisCommand) => {
+    // Check global debug options
+    const opts = program.opts();
+    if (opts.debug) setDebug(true);
+    if (opts.verbose) setVerbose(true);
+
     // Global error handling
     process.on('uncaughtException', (error) => {
       handleError(error);

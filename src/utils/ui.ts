@@ -156,6 +156,8 @@ export function divider(): void {
   console.log(chalk.gray('  ─'.repeat(30)));
 }
 
+import { isDebug } from './debug.ts';
+
 // ─── Error Handler ───────────────────────────────────────────────────
 export function handleError(error: unknown): void {
   if (error instanceof Error) {
@@ -179,10 +181,10 @@ export function handleError(error: unknown): void {
       console.log(chalk.yellow('  💡 Native module issue. Try `npm rebuild` or reinstall omo-suites.'));
     }
 
-    if (process.env.DEBUG) {
+    if (isDebug()) {
       console.error(chalk.gray(error.stack || ''));
     } else {
-      console.log(chalk.gray('  Set DEBUG=1 for full stack trace.'));
+      console.log(chalk.gray('  Set --debug for full stack trace.'));
     }
   } else {
     errorBox('Error', String(error));
