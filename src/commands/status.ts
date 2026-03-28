@@ -6,6 +6,7 @@ import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { heading, success, fail, warn, info, icons, handleError, successBox, infoBox } from '../utils/ui.ts';
 import { readOpenCodeConfig } from '../core/opencode.ts';
+import { fetchWithRetry } from '../utils/network.ts';
 
 // ─── Find package.json for version ──────────────────────────────────
 function getVersion(): string {

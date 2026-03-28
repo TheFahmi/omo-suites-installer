@@ -8,6 +8,7 @@ import { resolve, dirname } from 'path';
 import { homedir, hostname } from 'os';
 import { createHash } from 'crypto';
 import { showBanner, successBox, infoBox, heading, success, info, bullet, icons, handleError } from '../utils/ui.ts';
+import { fetchWithRetry } from '../utils/network.ts';
 import { readConfig, writeConfig, ensureConfigDir, configExists } from '../core/config.ts';
 import { detectOpenCode, writeOpenCodeConfig, mergeProfile, findOpencodeConfig, checkOhMyOpenCode } from '../core/opencode.ts';
 import { encrypt } from '../core/crypto.ts';
