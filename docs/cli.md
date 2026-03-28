@@ -2,6 +2,13 @@
 
 Full command reference for OMO Suites standalone CLI.
 
+## Global Flags
+
+All commands support the following global options:
+
+- `--debug`: Enable verbose debug output and stack traces
+- `--verbose`: Show detailed information (e.g., in status, doctor, etc)
+
 ## Setup
 
 ```bash
