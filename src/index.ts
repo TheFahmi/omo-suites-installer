@@ -30,6 +30,8 @@ import { registerWatchCommand } from './commands/watch.ts';
 import { registerMarketplaceCommand } from './commands/marketplace.ts';
 import { registerSquadCommand } from './commands/squad.ts';
 import { registerAutoCommand } from './commands/auto.ts';
+import { registerConfigCommand } from './commands/config.ts';
+import { registerTestSmokeCommand } from './commands/test-smoke.ts';
 import { runAutoChecks } from './core/auto.ts';
 
 
@@ -93,6 +95,8 @@ registerWatchCommand(program);
 registerMarketplaceCommand(program);
 registerSquadCommand(program);
 registerAutoCommand(program);
+registerConfigCommand(program);
+registerTestSmokeCommand(program);
 
 
 // Default action (no command)
