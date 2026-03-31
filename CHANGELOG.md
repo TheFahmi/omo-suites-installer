@@ -15,3 +15,4 @@
 ## Unreleased
 ### Added
 - Structured logging option via `src/utils/logger/index.ts` with auto rotation (`OMOCS_NO_LOGS` to disable)
+- Shell completion: updated `omocs completion` to cover all 34 commands (bash, zsh, fish). Added 12 missing commands: `compact`, `session`, `worktree`, `template`, `bootstrap`, `fallback`, `watch`, `marketplace`, `squad`, `auto`, `config`, `self-test` — with full subcommand completions for each. Added installation instructions via `--help`. Added unit tests for completion output.
