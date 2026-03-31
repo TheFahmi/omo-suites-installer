@@ -1,3 +1,5 @@
+[![CI](https://github.com/TheFahmi/omo-suites-installer/actions/workflows/ci.yml/badge.svg)](https://github.com/TheFahmi/omo-suites-installer/actions/workflows/ci.yml)
+
 ```
    ██████╗ ███╗   ███╗ ██████╗     ███████╗██╗   ██╗██╗████████╗███████╗███████╗
   ██╔═══██╗████╗ ████║██╔═══██╗    ██╔════╝██║   ██║██║╚══██╔══╝██╔════╝██╔════╝
@@ -8,6 +10,7 @@
 ```
 
 <p align="center">
+  <a href="https://github.com/TheFahmi/omo-suites-installer/actions/workflows/ci.yml"><img src="https://github.com/TheFahmi/omo-suites-installer/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://www.npmjs.com/package/omo-suites"><img src="https://img.shields.io/npm/v/omo-suites.svg" alt="NPM Version" /></a>
   <a href="https://www.npmjs.com/package/omo-suites"><img src="https://img.shields.io/npm/dm/omo-suites.svg" alt="NPM Downloads" /></a>
   <a href="https://www.npmjs.com/package/omo-suites"><img src="https://img.shields.io/npm/l/omo-suites.svg" alt="License" /></a>
