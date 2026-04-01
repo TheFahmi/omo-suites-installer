@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { showBanner, handleError } from './utils/ui.ts';
 import { setDebug, setVerbose, isDebug } from './utils/debug.ts';
+import { didYouMean, getExitCode, formatError, printError, formatDidYouMean } from './utils/errors.ts';
 import { registerInitCommand } from './commands/init.ts';
 import { registerDoctorCommand } from './commands/doctor.ts';
 import { registerAccountCommand } from './commands/account.ts';
@@ -36,14 +37,49 @@ import { registerConfigCommand } from './commands/config.ts';
 import { registerTestSmokeCommand } from './commands/test-smoke.ts';
 import { runAutoChecks } from './core/auto.ts';
 
-
 import { readPackageJson } from './utils/find-package-json.ts';
 
 const pkg = readPackageJson(import.meta.url);
 const VERSION = pkg.version;
 
-import { trackEvent } from "./utils/telemetry.ts";
+import { trackEvent } from './utils/telemetry.ts';
 export const program = new Command();
+
+// ─── Available Commands (for Did You Mean suggestions) ───────────────
+const AVAILABLE_COMMANDS = [
+  'init', 'doctor', 'account', 'profile', 'agent', 'lsp', 'mcp', 'stats',
+  'status', 'launchboard', 'export', 'import', 'diff', 'benchmark',
+  'init-deep', 'plan', 'cost', 'check', 'memory', 'completion', 'index',
+  'compact', 'session', 'worktree', 'template', 'bootstrap', 'fallback',
+  'watch', 'marketplace', 'squad', 'auto', 'config', 'test-smoke',
+];
+
+// ─── Command Not Found ───────────────────────────────────────────────
+program.commandNotFound((name) => {
+  const suggestion = didYouMean(name, AVAILABLE_COMMANDS);
+  console.log(chalk.red(`\n  ✗ Unknown command: "${name}"`));
+  if (suggestion) {
+    console.log(chalk.yellow(`\n  Did you mean "${suggestion}"?`));
+  }
+  console.log(chalk.gray(`  Run \`omocs --help\` for available commands.\n`));
+  process.exit(127);
+});
+
+// ─── Configure Output ────────────────────────────────────────────────
+program.configureOutput({
+  // Write errors to stderr
+  writeErr: (str) => process.stderr.write(str),
+  // Customize the error output
+  outputError: (str, write) => {
+    // Only write if not already handled
+    write(str);
+  },
+});
+
+// Show suggestions after a command error (Commander v13+)
+if (typeof program.showSuggestionAfterError === 'function') {
+  program.showSuggestionAfterError(true);
+}
 
 program
   .name('omocs')
@@ -59,7 +95,14 @@ program
 
     // Global error handling
     process.on('uncaughtException', (error) => {
-      handleError(error);
+      const code = getExitCode(error);
+      if (code === 2 || code === 127) {
+        // Usage/not-found errors: print cleaner message with suggestion
+        printError(error);
+      } else {
+        handleError(error);
+      }
+      process.exit(code);
     });
     process.on('unhandledRejection', (error) => {
       handleError(error);
@@ -71,7 +114,7 @@ program
     const skipAuto = ['auto', 'completion', 'help'].includes(cmdName);
     if (!skipAuto) {
       runAutoChecks(process.cwd(), { silent: false }).catch(() => {});
-      trackEvent("command_invoked", { plugin: cmdName });
+      trackEvent('command_invoked', { plugin: cmdName });
     }
   });
 

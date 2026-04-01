@@ -157,28 +157,20 @@ export function divider(): void {
 }
 
 import { isDebug } from './debug.ts';
+import { getExitCode, suggestFix } from './errors.ts';
 
 // ─── Error Handler ───────────────────────────────────────────────────
 export function handleError(error: unknown): void {
+  const exitCode = getExitCode(error);
+
   if (error instanceof Error) {
     errorBox('Error', error.message);
 
-    // Contextual help suggestions per error type
-    const msg = error.message.toLowerCase();
-    if (msg.includes('enoent') || msg.includes('no such file')) {
-      console.log(chalk.yellow('  💡 File or directory not found. Try running `omocs init` first.'));
-    } else if (msg.includes('eacces') || msg.includes('permission denied')) {
-      console.log(chalk.yellow('  💡 Permission denied. Try running with sudo or check file permissions.'));
-    } else if (msg.includes('econnrefused') || msg.includes('econnreset') || msg.includes('fetch failed')) {
-      console.log(chalk.yellow('  💡 Connection failed. Check your internet connection and try again.'));
-    } else if (msg.includes('json') || msg.includes('unexpected token')) {
-      console.log(chalk.yellow('  💡 Config file may be corrupted. Check for .bak backup files or run `omocs init --force`.'));
-    } else if (msg.includes('module') || msg.includes('cannot find')) {
-      console.log(chalk.yellow('  💡 Missing dependency. Try `npm install -g omo-suites@latest` to reinstall.'));
-    } else if (msg.includes('timeout')) {
-      console.log(chalk.yellow('  💡 Operation timed out. Check your network or try again later.'));
-    } else if (msg.includes('better-sqlite3') || msg.includes('native module')) {
-      console.log(chalk.yellow('  💡 Native module issue. Try `npm rebuild` or reinstall omo-suites.'));
+    // Contextual help suggestions using the new error utility
+    const suggestions = suggestFix(error);
+    for (const s of suggestions) {
+      const prefix = s.type === 'fix' ? '🔧' : '💡';
+      console.log(chalk.yellow(`  ${prefix} ${s.message}`));
     }
 
     if (isDebug()) {
@@ -189,5 +181,6 @@ export function handleError(error: unknown): void {
   } else {
     errorBox('Error', String(error));
   }
-  process.exit(1);
+
+  process.exit(exitCode);
 }
