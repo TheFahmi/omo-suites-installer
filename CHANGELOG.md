@@ -1,6 +1,12 @@
 ---
 # OMO Suites Changelog
 
+## [1.8.1] — 2026-04-03
+
+### Added
+- **`omocs key set <apikey>`** — Set 1mr.tech reseller API key from command line (no wizard). Validates against API, encrypts and saves to opencode.json, prints token balance.
+- **`omocs key status`** — Check current 1mr.tech token balance from saved config.
+
 ## [1.16.0] - 2026-03-31
 ### Added
 - Shell Completion: updated `omocs completion` with all 34 CLI commands for bash, zsh, and fish.

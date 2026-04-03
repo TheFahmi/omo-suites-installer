@@ -6,6 +6,7 @@ import { didYouMean, getExitCode, formatError, printError, formatDidYouMean } fr
 import { registerInitCommand } from './commands/init.ts';
 import { registerDoctorCommand } from './commands/doctor.ts';
 import { registerAccountCommand } from './commands/account.ts';
+import { registerKeyCommand } from './commands/key.ts';
 import { registerProfileCommand } from './commands/profile.ts';
 import { registerAgentCommand } from './commands/agent.ts';
 import { registerLspCommand } from './commands/lsp.ts';
@@ -47,7 +48,7 @@ export const program = new Command();
 
 // ─── Available Commands (for Did You Mean suggestions) ───────────────
 const AVAILABLE_COMMANDS = [
-  'init', 'doctor', 'account', 'profile', 'agent', 'lsp', 'mcp', 'stats',
+  'init', 'doctor', 'account', 'key', 'profile', 'agent', 'lsp', 'mcp', 'stats',
   'status', 'launchboard', 'export', 'import', 'diff', 'benchmark',
   'init-deep', 'plan', 'cost', 'check', 'memory', 'completion', 'index',
   'compact', 'session', 'worktree', 'template', 'bootstrap', 'fallback',
@@ -122,6 +123,7 @@ program
 registerInitCommand(program);
 registerDoctorCommand(program);
 registerAccountCommand(program);
+registerKeyCommand(program);
 registerProfileCommand(program);
 registerAgentCommand(program);
 registerLspCommand(program);
