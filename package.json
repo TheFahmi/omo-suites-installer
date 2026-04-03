@@ -26,7 +26,7 @@
     "start": "bun run bin/omocs.ts",
     "dev": "bun run --watch bin/omocs.ts",
     "build": "npx esbuild src/plugin.ts --outdir=dist --platform=browser --format=esm --target=es2022 --packages=external",
-    "build:cli": "npx esbuild bin/omocs.ts --outdir=dist/cli --platform=node --format=esm --target=node20 --packages=external --external:./ --alias:./=. && chmod +x dist/cli/omocs.js",
+    "build:cli": "npx esbuild bin/omocs.ts --bundle --outdir=dist/cli --platform=node --format=esm --target=node20 --packages=external && chmod +x dist/cli/omocs.js",
     "build:all": "npm run build && npm run build:cli",
     "test": "npx vitest run",
     "prepublishOnly": "npm run build:all",
