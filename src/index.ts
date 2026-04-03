@@ -56,15 +56,8 @@ const AVAILABLE_COMMANDS = [
 ];
 
 // ─── Command Not Found ───────────────────────────────────────────────
-program.commandNotFound((name) => {
-  const suggestion = didYouMean(name, AVAILABLE_COMMANDS);
-  console.log(chalk.red(`\n  ✗ Unknown command: "${name}"`));
-  if (suggestion) {
-    console.log(chalk.yellow(`\n  Did you mean "${suggestion}"?`));
-  }
-  console.log(chalk.gray(`  Run \`omocs --help\` for available commands.\n`));
-  process.exit(127);
-});
+// Commander v13 removed commandNotFound() — use configureOutput.outputError instead
+// The built-in showSuggestionAfterError handles "Did you mean" automatically
 
 // ─── Configure Output ────────────────────────────────────────────────
 program.configureOutput({
