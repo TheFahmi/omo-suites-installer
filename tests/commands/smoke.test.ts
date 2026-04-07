@@ -80,6 +80,14 @@ describe('commands smoke tests', () => {
     expect(cmd).toBeDefined();
   });
 
+  // ─── key ─────────────────────────────────────────────────────────
+  it('should register key command', async () => {
+    const { registerKeyCommand } = await import('../../src/commands/key.ts');
+    registerKeyCommand(program);
+    const cmd = program.commands.find(c => c.name() === 'key');
+    expect(cmd).toBeDefined();
+  });
+
   // ─── init ────────────────────────────────────────────────────────
   it('should register init command', async () => {
     const { registerInitCommand } = await import('../../src/commands/init.ts');
@@ -288,7 +296,7 @@ describe('commands smoke tests', () => {
     const names = fullProgram.commands.map((c: Command) => c.name());
 
     const expectedCommands = [
-      'init', 'init-deep', 'doctor', 'account', 'profile', 'agent',
+      'init', 'init-deep', 'doctor', 'account', 'key', 'profile', 'agent',
       'lsp', 'mcp', 'stats', 'status', 'launchboard', 'export', 'import',
       'diff', 'benchmark', 'plan', 'cost', 'check', 'memory', 'completion',
       'index', 'compact', 'session', 'worktree', 'template', 'bootstrap',

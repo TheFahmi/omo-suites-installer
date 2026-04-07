@@ -86,7 +86,7 @@ export function registerProfileCommand(program: Command): void {
         }
 
         // Check built-in profiles
-        let selectedProfile = getProfile(key!);
+        let selectedProfile: any = getProfile(key!);
         if (!selectedProfile) {
           // Check custom profiles
           const custom = await customProfilesStore.read();
@@ -203,7 +203,7 @@ export function registerProfileCommand(program: Command): void {
         const config = await readConfig();
         const profileKey = key || config.activeProfile;
 
-        let selectedProfile = getProfile(profileKey);
+        let selectedProfile: any = getProfile(profileKey);
         if (!selectedProfile) {
           const custom = await customProfilesStore.read();
           selectedProfile = custom.profiles[profileKey];

@@ -75,13 +75,17 @@ function writeOpencodeConfig(apiKey: string, encrypted: boolean): void {
   // Ensure plugins array
   if (!config.plugin) config.plugin = [];
   if (!Array.isArray(config.plugin)) config.plugin = [];
+  
+  const plugins = config.plugin as string[];
 
   const pluginsToAdd = ['oh-my-opencode', 'omocs'];
   for (const plugin of pluginsToAdd) {
-    if (!config.plugin.includes(plugin) && !config.plugin.some((p: unknown) => typeof p === 'string' && p.includes('omocs'))) {
-      config.plugin.push(plugin);
+    if (!plugins.includes(plugin) && !plugins.some((p: unknown) => typeof p === 'string' && p.includes('omocs'))) {
+      plugins.push(plugin);
     }
   }
+  
+  config.plugin = plugins;
 
   mkdirSync(dirname(configPath), { recursive: true });
   writeFileSync(configPath, JSON.stringify(config, null, 2));

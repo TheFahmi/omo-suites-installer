@@ -15,9 +15,13 @@ _omocs_completions() {
     prev="\${COMP_WORDS[COMP_CWORD-1]}"
 
     # Top-level commands
-    commands="init init-deep doctor account profile agent lsp mcp stats status launchboard export import diff benchmark plan cost check memory completion index compact session worktree template bootstrap fallback watch marketplace squad auto config self-test help"
+    commands="init init-deep doctor account key profile agent lsp mcp stats status launchboard export import diff benchmark plan cost check memory completion index compact session worktree template bootstrap fallback watch marketplace squad auto config self-test help"
 
     case "\${prev}" in
+        key)
+            COMPREPLY=( $(compgen -W "set status" -- "\${cur}") )
+            return 0
+            ;;
         omocs|omo)
             COMPREPLY=( $(compgen -W "\${commands}" -- "\${cur}") )
             return 0
@@ -121,7 +125,7 @@ function generateZshCompletion(): string {
 
 _omocs() {
     local -a commands
-    local -a memory_cmds index_cmds completion_cmds profile_cmds agent_cmds account_cmds
+    local -a memory_cmds index_cmds completion_cmds profile_cmds agent_cmds account_cmds key_cmds
     local -a lsp_cmds mcp_cmds lb_cmds compact_cmds session_cmds worktree_cmds
     local -a template_cmds fallback_cmds watch_cmds marketplace_cmds squad_cmds auto_cmds config_cmds
 
@@ -130,6 +134,7 @@ _omocs() {
         'init-deep:Auto-generate hierarchical AGENTS.md files'
         'doctor:Health check — diagnose your OpenCode setup'
         'account:Manage API accounts'
+        'key:Manage machine-specific encryption keys'
         'profile:Manage model profiles'
         'agent:Manage and route agents'
         'lsp:Manage LSP servers'
@@ -191,6 +196,11 @@ _omocs() {
         'list:List available agents'
         'show:Show agent details'
         'route:Route a task to an agent'
+    )
+
+    key_cmds=(
+        'set:Set encryption key for this machine'
+        'status:Check encryption key status'
     )
 
     account_cmds=(
@@ -299,6 +309,7 @@ _omocs() {
             profile) _describe 'subcommand' profile_cmds ;;
             agent) _describe 'subcommand' agent_cmds ;;
             account) _describe 'subcommand' account_cmds ;;
+            key) _describe 'subcommand' key_cmds ;;
             lsp) _describe 'subcommand' lsp_cmds ;;
             mcp) _describe 'subcommand' mcp_cmds ;;
             launchboard|lb) _describe 'subcommand' lb_cmds ;;
@@ -331,7 +342,7 @@ complete -c omocs -f
 complete -c omo -f
 
 # Top-level commands
-set -l commands init init-deep doctor account profile agent lsp mcp stats status launchboard export import diff benchmark plan cost check memory completion index compact session worktree template bootstrap fallback watch marketplace squad auto config self-test help
+set -l commands init init-deep doctor account key profile agent lsp mcp stats status launchboard export import diff benchmark plan cost check memory completion index compact session worktree template bootstrap fallback watch marketplace squad auto config self-test help
 
 complete -c omocs -n "not __fish_seen_subcommand_from \$commands" -a init -d "Initialize OMO Suites configuration"
 complete -c omocs -n "not __fish_seen_subcommand_from \$commands" -a init-deep -d "Auto-generate hierarchical AGENTS.md"
@@ -392,6 +403,10 @@ complete -c omocs -n "__fish_seen_subcommand_from profile" -a show -d "Show prof
 complete -c omocs -n "__fish_seen_subcommand_from agent" -a list -d "List agents"
 complete -c omocs -n "__fish_seen_subcommand_from agent" -a show -d "Show agent"
 complete -c omocs -n "__fish_seen_subcommand_from agent" -a route -d "Route task"
+
+# Key subcommands
+complete -c omocs -n "__fish_seen_subcommand_from key" -a set -d "Set encryption key"
+complete -c omocs -n "__fish_seen_subcommand_from key" -a status -d "Check key status"
 
 # Account subcommands
 complete -c omocs -n "__fish_seen_subcommand_from account" -a list -d "List accounts"

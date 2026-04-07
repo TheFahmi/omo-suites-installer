@@ -1,6 +1,6 @@
 {
   "name": "omo-suites",
-  "version": "1.8.4",
+  "version": "1.9.0",
   "description": "OMO Suites — OpenCode plugin + CLI toolkit. Multi-model orchestration, profiles, agent routing, MCP/LSP management.",
   "type": "module",
   "main": "dist/plugin.js",
@@ -25,7 +25,7 @@
   "scripts": {
     "start": "bun run bin/omocs.ts",
     "dev": "bun run --watch bin/omocs.ts",
-    "build": "npx esbuild src/plugin.ts --outdir=dist --platform=browser --format=esm --target=es2022 --packages=external",
+    "build": "npx esbuild src/plugin.ts --bundle --outdir=dist --platform=browser --format=esm --target=es2022 --packages=external",
     "build:cli": "npx esbuild bin/omocs.ts --bundle --outdir=dist/cli --platform=node --format=esm --target=node20 --packages=external && chmod +x dist/cli/omocs.js",
     "build:all": "npm run build && npm run build:cli",
     "test": "npx vitest run",
@@ -38,22 +38,22 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@opencode-ai/plugin": "^1.2.20",
+    "@opencode-ai/plugin": "^1.3.17",
     "boxen": "^8.0.0",
     "chalk": "^5.4.0",
     "cli-table3": "^0.6.0",
-    "commander": "^13.0.0",
-    "inquirer": "^12.0.0",
-    "ora": "^8.0.0",
+    "commander": "^14.0.3",
+    "inquirer": "^13.4.0",
+    "ora": "^9.3.0",
     "zod": "^4.3.6"
   },
   "optionalDependencies": {
-    "better-sqlite3": "^11.0.0"
+    "better-sqlite3": "^12.8.0"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "@types/node": "^25.5.0",
-    "typescript": "^5.7.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.5.2",
+    "typescript": "^6.0.2",
     "vitest": "^3.2.4"
   },
   "license": "MIT",

@@ -3,7 +3,7 @@ import { join } from 'path';
 import { getConfigDir, ensureConfigDir } from './config.ts';
 
 // ─── Generic JSON Store ──────────────────────────────────────────────
-export class Store<T extends Record<string, unknown>> {
+export class Store<T extends Record<string, any>> {
   private filePath: string;
   private defaults: T;
 
