@@ -1,7 +1,7 @@
 ---
 # OMO Suites Changelog
 
-## [1.9.0] — 2026-04-07
+## [1.17.0] — 2026-04-07
 
 ### Changed
 - **Version correction** — Fixed version mismatch (npm published v1.8.4, CHANGELOG had v1.16.0). Reset to proper semver v1.9.0.
