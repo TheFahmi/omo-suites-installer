@@ -182,3 +182,6 @@ omocs template save my-setup  # Save as reusable template
 ## License
 
 [MIT](LICENSE) © TheFahmi
+
+
+<!-- Security scan triggered at 2026-10-07 11:40:32 -->
